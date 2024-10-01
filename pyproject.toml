@@ -39,6 +39,8 @@ python = "^3.10"
 pandas = "^2.2.2"
 numpy = "^2.1.1"
 scikit-learn = "^1.5.2"
+dvc = "^3.55.2"
+mlflow = "^2.16.2"
 
 
 [tool.poetry.group.dev.dependencies]
