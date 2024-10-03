@@ -1,6 +1,0 @@
-outs:
-- md5: dd6afc03a667ef9fff9379b1645f6e8f
-  size: 1597164432
-  isexec: true
-  hash: md5
-  path: train.txt
