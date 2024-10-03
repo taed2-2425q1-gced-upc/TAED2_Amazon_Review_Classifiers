@@ -1,114 +1,149 @@
-# Model Card for GPT-2 Amazon Sentiment Classifier (V1.0)
+---
+# For reference on model card metadata, see the spec: https://github.com/huggingface/hub-docs/blob/main/modelcard.md?plain=1
+# Doc / guide: https://huggingface.co/docs/hub/model-cards
+---
 
-## Model Summary
+# Model Card for hassansattar/sentimental-customer-review
 
-This model is a fine-tuned version of GPT-2 for sentiment classification of Amazon reviews. It was trained on a dataset of Amazon product reviews to classify text as having positive or negative sentiment.
+This model performs sentiment analysis on Amazon reviews, classifying them as either positive or negative.
 
 ## Model Details
 
 ### Model Description
 
-The GPT-2 Amazon Sentiment Classifier is built on the GPT-2 architecture, fine-tuned specifically for sentiment analysis of product reviews. The model is capable of identifying the overall sentiment expressed in an Amazon product review and categorizing it into either positive or negative. It leverages the powerful language understanding abilities of GPT-2 to perform text classification tasks, focusing on customer feedback in e-commerce.
+The model processes customer reviews and predicts their sentiment as either positive or negative. It uses a transformer architecture pre-trained GloVe embedding matrix and bidirectional LSTM structures.
 
-- **Developed by:** ashok2216  
-- **Funded by:** [More Information Needed]
-- **Shared by:** ashok2216  
-- **Model type:** GPT-2 fine-tuned for sentiment classification  
-- **Language(s) (NLP):** English  
-- **License:** MIT License
-- **Finetuned from model:** GPT-2  
+- **Developed by:** Hassan Sattar
+- **Model type:** LSTM
+- **Language(s) (NLP):** English
+- **License:** Unlicense
 
-### Model Sources
+### Model Sources 
 
-- **Repository:** [GPT-2 Amazon Sentiment Classifier V1.0 on Hugging Face](https://huggingface.co/ashok2216/gpt2-amazon-sentiment-classifier-V1.0)
-- **Paper:** [More Information Needed]
-- **Demo:** [More Information Needed]
+- **Repository:** [Hugging Face](https://huggingface.co/hassansattar/sentimental-customer-review/tree/main)
 
 ## Uses
 
 ### Direct Use
 
-This model can be used directly for sentiment analysis of product reviews on e-commerce platforms. It can be integrated into applications to gauge customer feedback automatically, classifying reviews into positive or negative sentiment categories.
-
-### Downstream Use
+This model can be used directly for analyzing the sentiment of text reviews. It is particularly suited for customer review data but may generalize to other forms of sentiment analysis.
 
 ### Out-of-Scope Use
 
+The model is not designed for tasks outside of binary sentiment classification (positive vs. negative) and may not perform well with highly subjective, complex emotions.
+
 ## Bias, Risks, and Limitations
 
-The model, trained primarily on Amazon reviews, may contain biases reflecting the specific product categories and customer demographics represented in the dataset. There is a risk that the model may underperform when faced with reviews from other e-commerce platforms or industries. Additionally, certain sentiments could be misclassified, particularly if the review contains sarcasm, irony, or complex language.
+The model is trained on a specific dataset (Amazon reviews), which may introduce bias depending on the type of reviews and sentiments present in that data. It may not generalize well to datasets with different linguistic styles or cultural nuances.
 
 ### Recommendations
 
+Users should be cautious when applying the model to domains that diverge significantly from the Amazon reviews dataset. More rigorous evaluations are necessary when deploying the model in such environments.
+
 ## How to Get Started with the Model
 
+Use the code below to get started with the model.
+
 ```python
-from transformers import pipeline
+from tensorflow.keras.models import load_model
 
-model_name = "ashok2216/gpt2-amazon-sentiment-classifier-V1.0"
-classifier = pipeline("sentiment-analysis", model=model_name)
+# Load the model
+model = load_model('sentiment_model.h5')
 
-result = classifier("This product is excellent and I love using it!")
-print(result)
+# Load tokenizer
+with open('tokenizer.pkl', 'rb') as f:
+    tokenizer = pickle.load(f)
+
+# from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+
+def preprocess_text(texts, tokenizer, max_length=250):
+    sequences = tokenizer.texts_to_sequences(texts)
+    padded_sequences = pad_sequences(sequences, maxlen=max_length, padding='post')
+    return padded_sequences
+
+def predict_sentiment(text, model, tokenizer):
+    preprocessed_text = preprocess_text(text, tokenizer)
+    prediction = model.predict(preprocessed_text)[0]
+    print("Prediction:", prediction)
+    sentiment_label = 'Negative' if prediction < 0.5 else 'Positive'
+    return sentiment_label
+
+# Example review
+new_review = "very bad product"
+
+# Predict sentiment
+sentiment = predict_sentiment(new_review, model, tokenizer)
+print(f"Review: {new_review}\nSentiment: {sentiment}\n")
 ```
 
 ## Training Details
 
 ### Training Data
 
-The model was trained on a dataset of Amazon product reviews. This dataset contains customer reviews spanning multiple product categories and consists of text that expresses customer sentiment in response to their purchasing experience. It also cotnains other fields and metadata.
-
-### Training Procedure
+The training data is based on a  dataset of Amazon reviews, where each review is labeled as either positive or negative. 
 
 #### Preprocessing
 
+Data preprocessing involves tokenizing the text into sequences and padding them for uniform length.
+
 #### Training Hyperparameters
 
-The following hyperparameters were used during training:
-- learning_rate: 2e-05
-- train_batch_size: 16
-- eval_batch_size: 16
-- seed: 42
-- optimizer: Adam with betas=(0.9,0.999) and epsilon=1e-08
-- lr_scheduler_type: linear
-- num_epochs: 2
-  
-#### Speeds, Sizes, Times
+The model structure is the following:
 
-[More Information Needed]
+```python
+model = Sequential([
+    Embedding(10000, embedding_dim, embeddings_initializer=Constant(embedding_matrix), 
+              input_length=250, trainable=False),
+    Bidirectional(LSTM(128, return_sequences=True)),
+    Dropout(0.5),
+    Bidirectional(LSTM(128)),
+    Dropout(0.5),
+    Dense(1, activation='sigmoid')
+])
+```
+
+The optimizer is adam and the loss is the binary cross-entropy loss.
+
+```python
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+```
+
+Total params: 1,628,993
+
+Trainable params: 628,993
+
+Non-trainable params: 1,000,000
+
+The model is trained for 5 epochs, with a batch size of 64.
 
 ## Evaluation
 
 ### Testing Data, Factors & Metrics
 
+
 #### Testing Data
 
-The model's performance was evaluated on a held-out test set of Amazon reviews that were not included in the training data.
-
-#### Factors
-
-The evaluation focused on the correct classification of sentiment across different types of product categories and varying lengths of reviews.
+The testing data is the validation set split from the same Amazon reviews dataset.
 
 #### Metrics
 
-Standard classification metrics, including accuracy and F1 score, are used. These metrics assess how well the model differentiates between positive and negative sentiment categories.
+<!-- These are the evaluation metrics being used, ideally with a description of why. -->
+
+The primary evaluation metric used is accuracy, alongside loss metrics to track performance during training.
 
 ### Results
 
-The model achieves the following results on the evaluation set:
-- Loss: 0.0320
-- Accuracy: 0.9680
-- F1: 0.9680
+The model achieved high accuracy on the validation dataset, demonstrating strong performance in binary sentiment classification. The accuracy on validation was 0.9132547974586487. Validation loss was  0.23057065904140472.
 
 #### Summary
 
 [More Information Needed]
 
-## Model Examination
-
-[More Information Needed]
 
 ## Environmental Impact
+
+<!-- Total emissions (in grams of CO2eq) and additional considerations, such as electricity usage, go here. Edit the suggested text below accordingly -->
 
 Carbon emissions can be estimated using the [Machine Learning Impact calculator](https://mlco2.github.io/impact#compute) presented in [Lacoste et al. (2019)](https://arxiv.org/abs/1910.09700).
 
@@ -118,11 +153,10 @@ Carbon emissions can be estimated using the [Machine Learning Impact calculator]
 - **Compute Region:** [More Information Needed]
 - **Carbon Emitted:** [More Information Needed]
 
-## Technical Specifications
 
 ### Model Architecture and Objective
 
-The model is based on the GPT-2 architecture, fine-tuned for sentiment analysis using Amazon review data.
+[More Information Needed]
 
 ### Compute Infrastructure
 
@@ -134,39 +168,7 @@ The model is based on the GPT-2 architecture, fine-tuned for sentiment analysis 
 
 #### Software
 
-The model uses the Hugging Face Transformers library and is compatible with Python environments.
-
-The following framework versions were used:
-- Transformers 4.39.3
-- Pytorch 2.2.1+cu121
-- Datasets 2.18.0
-- Tokenizers 0.15.2
-
-## Citation
-
-**BibTeX:**
-
-```bibtex
-@misc{ashok_gpt2_amazon_sentiment,
-  author = {ashok2216},
-  title = {GPT-2 Amazon Sentiment Classifier V1.0},
-  year = {2023},
-  publisher = {Hugging Face},
-  howpublished = {\url{https://huggingface.co/ashok2216/gpt2-amazon-sentiment-classifier-V1.0}},
-}
-```
-
-**APA:**
-
-[More Information Needed]
-
-## Glossary
-
-[More Information Needed]
-
-## More Information
-
-[More Information Needed]
+-TensorFlow 2.10.0
 
 ## Model Card Authors
 
