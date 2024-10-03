@@ -1,0 +1,6 @@
+outs:
+- md5: dd7f3ad906768166883176d69cc028de
+  size: 347116733
+  isexec: true
+  hash: md5
+  path: glove.6B.100d.txt
