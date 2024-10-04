@@ -58,4 +58,34 @@ Sentiment Classification for Amazon reviews
 ```
 
 --------
-
+## Setup Guide (Ubuntu)
+1. Clone repository
+```
+git clone <repository-url>
+```
+2. Get correct Python version & Jupyter
+```
+sudo apt-get install python3.10
+sudo apt-get install jupyter
+```
+3. Create virtual environment
+```
+pip install virtualenv
+cd  <project root>
+python3 -m venv venv
+source venv/bin/activate
+```
+4. Install packages
+```
+pip install -r requirements.txt
+```
+5. Create custom kernel
+```
+pip install ipykernel
+python -m ipykernel install --user --name=myenv --display-name "Python (myenv)"
+```
+6. Start Jupyter
+```
+jupyter notebook
+```
+7. Select created kernel in the drop down menu top left when you have openend ```TAED2_Amazon_Review_Classifiers/notebooks/1.0-mhs-original-hugging-face-notebook.ipynb```
