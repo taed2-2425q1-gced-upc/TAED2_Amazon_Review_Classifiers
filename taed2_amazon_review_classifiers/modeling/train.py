@@ -1,11 +1,15 @@
 from pathlib import Path
-
+import sys
 import typer
 from loguru import logger
 from tqdm import tqdm
 import mlflow
 
-from taed2_amazon_review_classifiers import MODELS_DIR, RAW_DATA_DIR, EXTERNAL_DATA_DIR, RESOURCES_DIR
+# setting path 
+root_dir = Path(__file__).resolve().parent.parent.parent
+sys.path.append(str(root_dir))
+
+from taed2_amazon_review_classifiers.config import MODELS_DIR, RAW_DATA_DIR, EXTERNAL_DATA_DIR, RESOURCES_DIR
 
 app = typer.Typer()
 
