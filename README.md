@@ -26,8 +26,8 @@ Sentiment Classification for Amazon reviews
 │                         the creator's initials, and a short `-` delimited description, e.g.
 │                         `1.0-jqp-initial-data-exploration`.
 │
-├── pyproject.toml     <- Project configuration file with package metadata for 
-│                         taed2_amazon_review_classifiers and configuration for tools like black
+├── params.yaml	       <- Contains parameter values for tweaking the model as well as file paths
+│                       
 │
 ├── references         <- Data dictionaries, manuals, and all other explanatory materials.
 │
@@ -39,19 +39,18 @@ Sentiment Classification for Amazon reviews
 │
 ├── setup.cfg          <- Configuration file for flake8
 │
-└── taed2_amazon_review_classifiers   <- Source code for use in this project.
+└── src   <- Source code for use in this project.
     │
     ├── __init__.py             <- Makes taed2_amazon_review_classifiers a Python module
     │
     ├── config.py               <- Store useful variables and configuration
     │
-    ├── dataset.py              <- Scripts to download or generate data
-    │
-    ├── features.py             <- Code to create features for modeling
-    │
     ├── modeling                
     │   ├── __init__.py 
     │   ├── predict.py          <- Code to run model inference with trained models          
+    │   ├── evaluate.py         <- Code to evaluate the performance of model against unseen data
+    │   ├── preprocess.py       <- Code to preprocess the data
+    │   ├── split.py            <- Code to split a dataset into train and test data
     │   └── train.py            <- Code to train models
     │
     └── plots.py                <- Code to create visualizations

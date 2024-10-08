@@ -1,0 +1,11 @@
+stages:
+  train:
+    cmd: python3 src/modeling/train.py
+    deps:
+    - data/external
+    - data/raw/train.txt
+    - src/modeling/train.py
+    params:
+    - train.embeddings
+    - train.model
+    - train.train_dataset

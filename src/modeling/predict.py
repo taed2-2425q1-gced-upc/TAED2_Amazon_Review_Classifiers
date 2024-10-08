@@ -8,14 +8,16 @@ from loguru import logger
 from tqdm import tqdm
 import sys
 import mlflow
+from codecarbon import EmissionsTracker
 
 # Setting path 
 root_dir = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(root_dir))
 
-from taed2_amazon_review_classifiers.config import MODELS_DIR, RAW_DATA_DIR, RESOURCES_DIR
+from src.config import MODELS_DIR, RAW_DATA_DIR, RESOURCES_DIR
 
 app = typer.Typer()
+tracker = EmissionsTracker()
 
 import dagshub
 dagshub.init(repo_owner='Benji33', repo_name='TAED2_Amazon_Review_Classifiers', mlflow=True)
@@ -40,6 +42,7 @@ def main(
     # Assuming you have the tokenizer saved at the same path as before
     tokenizer_path: Path = RESOURCES_DIR / "tokenizer.pkl",
 ):
+    tracker.start()
     logger.info(f"Using model {model_path} to predict data from {predict_data_path}")
     
     # Start MLflow run
@@ -71,6 +74,7 @@ def main(
                 mlflow.log_param(f"review_{review_counter}", review)
                 mlflow.log_param(f"sentiment_{review_counter}", sentiment)
                 review_counter += 1
-
+        tracker.stop()
+        
 if __name__ == "__main__":
     app()
