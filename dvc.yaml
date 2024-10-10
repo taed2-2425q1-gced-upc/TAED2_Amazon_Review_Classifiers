@@ -9,3 +9,10 @@ stages:
     - train.embeddings
     - train.model
     - train.train_dataset
+  evaluate:
+    cmd: python3 -m src/modeling/evaluate.py
+    deps:
+    - src/modeling/evaluate.py
+    metrics:
+    - metrics/evaluation.json:
+        cache: false

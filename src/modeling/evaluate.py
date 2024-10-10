@@ -1,47 +1,114 @@
+"""
+Module for predicting sentiment from Amazon reviews using a pre-trained
+TensorFlow model and tokenizer. This script reads test data, evaluates the
+model's performance on the dataset, and logs relevant metrics using MLflow.
+
+The module also integrates with DagsHub for experiment tracking and supports
+the following functionalities:
+- Preprocessing text data (tokenizing and padding)
+- Evaluating model accuracy and loss on labeled test data
+- Logging model performance and input data artifacts to MLflow
+"""
+
+import pickle
+import sys
+import typing
 from pathlib import Path
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.preprocessing.sequence import pad_sequences
-import pickle
 import typer
 from loguru import logger
-from tqdm import tqdm
-import sys
 import mlflow
+import dagshub
 
-# Setting path 
+# Setting path
 root_dir = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(root_dir))
 
 from src.config import MODELS_DIR, RAW_DATA_DIR, RESOURCES_DIR
 
+# Initialize Typer app for command-line interface
 app = typer.Typer()
 
-import dagshub
+# Initialize DagsHub integration
 dagshub.init(repo_owner='Benji33', repo_name='TAED2_Amazon_Review_Classifiers', mlflow=True)
 
+# Set the experiment for MLflow
 mlflow.set_experiment("amazon-reviews-predict")
 
 
-def predict_sentiment(text, model, tokenizer):
-    """Predict sentiment for a given text."""
-    # Preprocess the text before predicting (tokenizing and padding)
+def predict_sentiment(text: str, model: tf.keras.Model, tokenizer):
+    """
+    Predict sentiment for a given text using a pre-trained TensorFlow model.
+
+    Args:
+        text (str): Input text for sentiment prediction.
+        model (tf.keras.Model): Loaded TensorFlow model used for prediction.
+        tokenizer: Tokenizer used to preprocess the text data.
+
+    Returns:
+        str: Predicted sentiment label ('Positive' or 'Negative').
+    """
+    # Preprocess the text by tokenizing and padding
     sequence = tokenizer.texts_to_sequences([text])  # Convert text to sequence
     padded_sequence = pad_sequences(sequence, padding='post', maxlen=250)  # Pad sequence
     prediction = model.predict(padded_sequence)[0]
+
+    # Determine sentiment label based on prediction
     sentiment_label = 'Negative' if prediction < 0.5 else 'Positive'
     return sentiment_label
 
+def split_reviews_labels(input_lines: list[str]) -> typing.Tuple[np.ndarray, np.ndarray]:
+    """
+    Split raw input lines into reviews and their corresponding labels.
+
+    Args:
+        input_lines (list[str]): List of lines containing review data.
+
+    Returns:
+        Tuple[np.ndarray, np.ndarray]: A tuple of two numpy arrays,
+        one for reviews and one for labels (1 for positive, 0 for negative).
+    """
+    labels = []
+    reviews = []
+
+    for line in input_lines:
+        split_line = line.strip().split(' ', 1)
+        label = 1 if split_line[0] == '__label__2' else 0
+        review = split_line[1]
+        labels.append(label)
+        reviews.append(review)
+
+    # Convert reviews and labels to numpy arrays
+    reviews = np.array(reviews)
+    labels = np.array(labels)
+
+    return reviews, labels
+
 @app.command()
 def main(
-    # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
-    predict_data_path: Path = RAW_DATA_DIR / "predict.txt",
+    evaluate_data_path: Path = RAW_DATA_DIR / "test.txt",
     model_path: Path = MODELS_DIR / "sentiment_model.h5",
-    # Assuming you have the tokenizer saved at the same path as before
     tokenizer_path: Path = RESOURCES_DIR / "tokenizer.pkl",
+    max_review_length: int = 250,
 ):
-    logger.info(f"Using model {model_path} to predict data from {predict_data_path}")
-    
+    """
+    Main function to evaluate the sentiment prediction model on a test dataset.
+
+    This function loads the pre-trained model and tokenizer, reads test data
+    from a file, and evaluates the model's accuracy and loss. It logs the
+    evaluation results and input artifacts to MLflow.
+
+    Args:
+        evaluate_data_path (Path): Path to the test data file.
+        model_path (Path): Path to the trained model file (.h5).
+        tokenizer_path (Path): Path to the saved tokenizer file (.pkl).
+        max_review_length (int): Maximum length for padding reviews (default is 250).
+    """
+    logger.info(f"Using model {model_path} to evaluate performance on \
+                data from {evaluate_data_path}")
+
     # Start MLflow run
     with mlflow.start_run():
 
@@ -50,54 +117,43 @@ def main(
         with open(tokenizer_path, 'rb') as handle:
             tokenizer = pickle.load(handle)
 
-        # Read reviews from predict.txt
-        with open(predict_data_path, 'r', encoding='utf-8') as file:
-            reviews = file.readlines()  # Read all lines from the file
+        # Read reviews from evaluation file
+        with open(evaluate_data_path, 'r', encoding='utf-8') as file:
+            evaluate_file_lines = file.readlines()  # Read all lines from the file
 
-        # Log predict file as artifact
-        mlflow.log_artifact(predict_data_path)
-        mlflow.log_param(f"Amount of reviews", len(reviews))
-        # Predict sentiments for each review
+        # Log input data as artifact
+        mlflow.log_artifact(evaluate_data_path)
+
+        # Split reviews and labels from the input data
+        reviews, labels = split_reviews_labels(evaluate_file_lines)
+
+        mlflow.log_param("Amount of reviews", len(reviews))
+        mlflow.log_param("Amount of labels", len(labels))
+
+        # Data sanity check
+        if len(reviews) != len(labels):
+            raise ValueError(f"Mismatch between reviews and labels: \
+                             {len(reviews)} reviews but {len(labels)} \
+                              labels. Ensure that each review has a \
+                              corresponding label in the input file.")
+
+
+        # Tokenize and pad the reviews
+        sequences = tokenizer.texts_to_sequences(reviews)
+        padded_review_sequences = pad_sequences(sequences, padding='post', maxlen=max_review_length)
+
+        # Predict sentiments for the reviews
         logger.info(f"Predicting sentiments for {len(reviews)} reviews...")
-        review_counter = 1
-        for review in tqdm(reviews, desc="Predicting"):
-            review = review.strip()  # Remove leading/trailing whitespace
-            if review:  # Check if the review is not empty
-                sentiment = predict_sentiment(review, model, tokenizer)
-                logger.success(f"Review: {review}\nSentiment: {sentiment}")
 
-                # Log the input review and prediction to MLflow
-                #mlflow.log_param(f"Review {review_counter} - {review}", sentiment)
-                mlflow.log_param(f"review_{review_counter}", review)
-                mlflow.log_param(f"sentiment_{review_counter}", sentiment)
-                review_counter += 1
+        # Evaluate the model's performance
+        loss, accuracy = model.evaluate(padded_review_sequences, labels)
+        print("Validation loss:", loss)
+        print("Validation accuracy:", accuracy)
 
-import matplotlib.pyplot as plt
-from sklearn.metrics import accuracy_score, confusion_matrix
-import seaborn as sns
+        # Log performance metrics to MLflow
+        mlflow.log_metric("Validation loss", loss)
+        mlflow.log_metric("Validation accuracy", accuracy)
 
-def evaluate_model(model, X_val, y_val):
-    y_pred = (model.predict(X_val) > 0.5).astype("int32")
-    acc = accuracy_score(y_val, y_pred)
-    print(f"Validation Accuracy: {acc}")
-
-    # Plot confusion matrix
-    cm = confusion_matrix(y_val, y_pred)
-    sns.heatmap(cm, annot=True, fmt="d")
-    plt.show()
-    
-@app.command()
-def main(
-    # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
-    predict_data_path: Path = RAW_DATA_DIR / "predict.txt",
-    model_path: Path = MODELS_DIR / "sentiment_model.h5",
-    # Assuming you have the tokenizer saved at the same path as before
-    tokenizer_path: Path = RESOURCES_DIR / "tokenizer.pkl",
-):
-    # Load the trained model and tokenizer
-    model = tf.keras.models.load_model(model_path)
-    
-    evaluate_model(model, X_val, y_val)
 
 if __name__ == "__main__":
     app()
