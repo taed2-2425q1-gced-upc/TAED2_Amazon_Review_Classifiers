@@ -15,8 +15,8 @@ The Amazon Reviews 2023 dataset includes rich features such as user reviews (rat
 
 ### Dataset Sources
 
-- **Repository:** [Amazon Reviews 2023 dataset](https://nijianmo.github.io/amazon/index.html)
-- **Paper [optional]:** [Amazon Product Review Dataset](https://cseweb.ucsd.edu/~jmcauley/pdfs/www15.pdf)
+- **Repository:** [Amazon Reviews 2023 dataset](https://amazon-reviews-2023.github.io/)
+- **Paper [optional]:** [Amazon Product Review Dataset](https://arxiv.org/abs/2403.03952)
 - **Demo [optional]:** Not available
 
 ## Uses
