@@ -22,7 +22,7 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 root_dir = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(root_dir))
 
-from src.config import MODELS_DIR, RAW_DATA_DIR, EXTERNAL_DATA_DIR, RESOURCES_DIR
+from src.config import EXTERNAL_DATA_DIR, RESOURCES_DIR
 
 app = typer.Typer()
 
@@ -67,9 +67,9 @@ def load_glove_embeddings(path, word_index, embedding_dim, num_words=10000):
 def main(
 
     # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
-    train_data_path: Path = RAW_DATA_DIR / "train.txt",
-    #labels_path: Path = PROCESSED_DATA_DIR / "labels.csv",
     embeddings_path: Path = EXTERNAL_DATA_DIR / "glove.6B.100d.txt",
+    embedding_matrix_path: Path = EXTERNAL_DATA_DIR / "embedding_matrix.pkl",
+    tokenizer_path: Path = RESOURCES_DIR / "tokenizer.pkl"
     # -----------------------------------------
 ):
     """
@@ -103,25 +103,26 @@ def main(
         # End the program here
         sys.exit("Exiting program. Please restart the runtime to apply changes.")
     
+    # ---- SETTING HYPERPARAMETERS ----
+    num_words=10000
+    embedding_dim=100
+
     # ---- LOADING TOKENIZER ----
-    with open(RESOURCES_DIR / "tokenizer.pkl", 'rb') as f:
+    logger.info("Loading tokenizer...")
+    with open(tokenizer_path, 'rb') as f:
         tokenizer = pickle.load(f)
     logger.info("Tokenizer loaded successfully.")
     
-    
-    # ---- LOADING GloVe PRE-TRAINED EMBEDDINGS ----
-    logger.info("Loading GloVe pre-trained embeddings...")
-    num_words=10000
-    embedding_dim = 100  # Size of the GloVe vectors you're using
+    # ---- LOADING GloVe PRE-TRAINED EMBEDDINGS AND CREATING EMBEDDING MATRIX ----
+    logger.info("Loading GloVe pre-trained embeddings and creating embedding matrix...")
     embedding_matrix = load_glove_embeddings(embeddings_path, tokenizer.word_index, embedding_dim, num_words=num_words)
-
     logger.info("Embedding matrix created successfully.")
     
-    # Save the embedding matrix
-    embedding_matrix_path = EXTERNAL_DATA_DIR / "embedding_matrix.pkl"
+    # ---- SAVING EMBEDDING MATRIX ----
+    logger.info("Saving embedding matrix...")
     with open(embedding_matrix_path, 'wb') as f:
         pickle.dump(embedding_matrix, f)
-    print(f"Embedding matrix saved at: {embedding_matrix_path}")
+    logger.info(f"Embedding matrix saved at: {embedding_matrix_path}")
     
     
 if __name__ == "__main__":
