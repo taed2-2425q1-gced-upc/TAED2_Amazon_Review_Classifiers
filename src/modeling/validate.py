@@ -26,10 +26,8 @@ from src.config import RAW_DATA_DIR
 # Initialize Typer app for command-line interface
 app = typer.Typer()
 
-# Initialize a Great Expectation Suite
+# Initialize a Great Expectation Context
 context = gx.get_context()
-context.add_or_update_expectation_suite("amazon_review_classifier_suite")
-datasource = context.sources.add_or_update_pandas(name="dataset_to_validate")
 
 # Initialize DagsHub integration
 dagshub.init(repo_owner='Benji33', repo_name='TAED2_Amazon_Review_Classifiers', mlflow=True)
@@ -93,45 +91,66 @@ def main(
         'Labels': labels
     })
 
-    data_asset = datasource.add_dataframe_asset(name="to_validate", dataframe=input_data)
+    # Create Suite
+    suite_name = "amazon_review_classifier_suite"
+    suite = gx.ExpectationSuite(name=suite_name)
+    suite = context.suites.add(suite)
 
-    # Request a validator
-    batch_request = data_asset.build_batch_request()
-    validator = context.get_validator(
-    batch_request=batch_request,
-    expectation_suite_name="amazon_review_classifier_suite",
-    datasource_name="dataset_to_validate",
-    data_asset_name="to_validate",
-)
-    # Add expectations
-    validator.expect_table_columns_to_match_ordered_list(
-        column_list=[
-            "Reviews",
-            "Labels"
-        ]
+    # Create expectations
+    columnNamesListExp = gx.expectations.ExpectTableColumnsToMatchOrderedList(
+        column_list=["Reviews", "Labels"]
     )
-    validator.expect_column_values_to_not_be_null("Labels")
-    validator.expect_column_values_to_be_in_set("Labels", [0, 1])
-    validator.expect_column_values_to_not_be_null("review")
+    distinctLablesExp = gx.expectations.ExpectColumnDistinctValuesToContainSet(
+        column="Labels",
+        value_set=[0, 1]
+    )
+    notNullReviewsExp = gx.expectations.ExpectColumnValuesToNotBeNull(column="Reviews")
+    notNullLablesExp = gx.expectations.ExpectColumnValuesToNotBeNull(column="Labels")
 
-    # Save expecation suite
-    validator.save_expectation_suite(discard_failed_expectations=False)
+    # Add Expectations
+    suite.add_expectation(columnNamesListExp)
+    suite.add_expectation(distinctLablesExp)
+    suite.add_expectation(notNullReviewsExp)
+    suite.add_expectation(notNullLablesExp)
 
-    # Create checkpoint
-    checkpoint = context.add_or_update_checkpoint(
-        name="amazon_review_validation_checkpoint",
-        validator=validator,
+    # Data source
+    data_source_name = "to_validate"
+    data_source = context.data_sources.add_pandas(name=data_source_name)
+
+    # Data Asset
+    data_asset_name = "to_validate_data_asset"
+    data_asset = data_source.add_dataframe_asset(name=data_asset_name)
+
+    # Batch Definition
+    batch_definition_name = "to_validate_batch_definition"
+    batch_definition = data_asset.add_batch_definition_whole_dataframe(
+        batch_definition_name
     )
 
-    # Validate
-    checkpoint_result = checkpoint.run()
+    # Provide dataframe to batch
+    batch_parameters = {"dataframe": input_data}
 
-    # View Results
-    context.view_validation_result(checkpoint_result)
+    batch_definition = (
+        context.data_sources.get(data_source_name)
+        .get_asset(data_asset_name)
+        .get_batch_definition(batch_definition_name)
+    )
+
+    # Create a Validation Definition
+    validation_def_name = "my_validation_definition"
+    validation_definition = gx.ValidationDefinition(
+        data=batch_definition, suite=suite, name=validation_def_name
+    )
+
+    # Add the Validation Definition to the Data Context
+    validation_definition = context.validation_definitions.add(validation_definition)
+
+    # Test the Expectation
+    validation_results = validation_definition.run(batch_parameters=batch_parameters)
+    logger.info(validation_results)
+    print(validation_results)
 
     logger.info(f"Validated {len(reviews)} reviews with Great Expectations.")
-
-
 
 if __name__ == "__main__":
     app()
