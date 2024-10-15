@@ -1,4 +1,0 @@
-[core]
-    remote = origin
-['remote "origin"']
-    url = https://dagshub.com/Benji33/TAED2_Amazon_Review_Classifiers.dvc
