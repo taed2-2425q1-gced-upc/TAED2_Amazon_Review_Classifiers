@@ -95,7 +95,7 @@ def main(
         lstm_units=128
         dropout=0.5
         batch_size = 256
-        num_epochs = 5
+        num_epochs = 1
         
         mlflow.log_param("max_input_length", maxlen)
         mlflow.log_param("num_words", num_words)
