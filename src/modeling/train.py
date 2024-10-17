@@ -122,7 +122,7 @@ def main():
         dropout=params["hyperparameters"]["dropout"]
         batch_size=params["hyperparameters"]["batch_size"]
         num_epochs=params["hyperparameters"]["num_epochs"]
-        optimizer= arams["hyperparameters"]["optimizer"]
+        optimizer= params["hyperparameters"]["optimizer"]
         loss=params["hyperparameters"][ "loss"]
         metrics=params["hyperparameters"]["metrics"]
 
@@ -215,10 +215,6 @@ def main():
 
         # Log all the hyperparameters in one call
         #mlflow.log_params(hyperparams)
-
-        
-
-
 
         del val_sequences
         gc.collect()
