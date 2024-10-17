@@ -57,6 +57,11 @@ Sentiment Classification for Amazon reviews
 ```
 
 --------
+
+## Energy Label 
+
+![Alt text](docs/Gaissa_training_label_sentiment.pdf?raw=true "Training Label")
+
 ## Setup Guide (Ubuntu)
 1. Clone repository
 ```
