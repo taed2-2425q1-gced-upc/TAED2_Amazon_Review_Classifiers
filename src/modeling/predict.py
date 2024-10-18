@@ -1,38 +1,51 @@
+""" Predict sentiment for reviews using a trained model. """
+
 from pathlib import Path
-import numpy as np
-import tensorflow as tf
-from tensorflow.keras.preprocessing.sequence import pad_sequences
+import subprocess
 import pickle
+import sys
+import tensorflow as tf
 import typer
 from loguru import logger
 from tqdm import tqdm
-import sys
 import mlflow
+import dagshub
 from codecarbon import EmissionsTracker
+from src.config import MODELS_DIR, RAW_DATA_DIR, RESOURCES_DIR
 
-# Setting path 
+# Setting path
 root_dir = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(root_dir))
-
-from src.config import MODELS_DIR, RAW_DATA_DIR, RESOURCES_DIR
 
 app = typer.Typer()
 tracker = EmissionsTracker()
 
-import dagshub
 dagshub.init(repo_owner='Benji33', repo_name='TAED2_Amazon_Review_Classifiers', mlflow=True)
 
-mlflow.set_experiment("amazon-reviews-predict")
+def check_tensorflow_version():
+    """ Check TensorFlow version and install if not 2.10.0. """
 
+    if tf.__version__ == '2.10.0':
+        logger.info("TensorFlow version 2.10.0 already installed.")
+    else:
+        logger.info(f"Current TensorFlow ver: {tf.__version__}. Installing TensorFlow 2.10.0...")
+        subprocess.check_call(['pip', 'uninstall', '-y', 'tensorflow'])
+        subprocess.check_call(['pip', 'install', 'tensorflow==2.10.0'])
+        logger.info("Exiting execution after installing TensorFlow version 2.10.0.")
+        sys.exit("Please restart the runtime to apply changes.")
 
 def predict_sentiment(text, model, tokenizer):
-    """Predict sentiment for a given text."""
+    """ Predict sentiment for a given text. """
+
     # Preprocess the text before predicting (tokenizing and padding)
     sequence = tokenizer.texts_to_sequences([text])  # Convert text to sequence
-    padded_sequence = pad_sequences(sequence, padding='post', maxlen=250)  # Pad sequence
+    padded_sequence = tf.keras.preprocessing.sequence.pad_sequences(
+    sequence, padding='post', maxlen=250)
     prediction = model.predict(padded_sequence)[0]
     sentiment_label = 'Negative' if prediction < 0.5 else 'Positive'
     return sentiment_label
+
+mlflow.set_experiment("amazon-reviews-predict")
 
 @app.command()
 def main(
@@ -42,9 +55,10 @@ def main(
     # Assuming you have the tokenizer saved at the same path as before
     tokenizer_path: Path = RESOURCES_DIR / "tokenizer.pkl",
 ):
+    """ Predict sentiment for reviews using a trained model. """
     tracker.start()
     logger.info(f"Using model {model_path} to predict data from {predict_data_path}")
-    
+
     # Start MLflow run
     with mlflow.start_run():
 
@@ -59,7 +73,7 @@ def main(
 
         # Log predict file as artifact
         mlflow.log_artifact(predict_data_path)
-        mlflow.log_param(f"Amount of reviews", len(reviews))
+        mlflow.log_param("Amount of reviews", len(reviews))
         # Predict sentiments for each review
         logger.info(f"Predicting sentiments for {len(reviews)} reviews...")
         review_counter = 1
@@ -75,6 +89,6 @@ def main(
                 mlflow.log_param(f"sentiment_{review_counter}", sentiment)
                 review_counter += 1
         tracker.stop()
-        
+
 if __name__ == "__main__":
     app()

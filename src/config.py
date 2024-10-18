@@ -1,3 +1,8 @@
+"""
+This module sets up project paths and configuration by loading environment variables.
+It also configures the logger and tqdm (if available) for progress bar support.
+"""
+
 from pathlib import Path
 
 from dotenv import load_dotenv

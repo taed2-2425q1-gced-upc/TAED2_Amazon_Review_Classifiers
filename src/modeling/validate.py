@@ -97,21 +97,21 @@ def main(
     suite = context.suites.add(suite)
 
     # Create expectations
-    columnNamesListExp = gx.expectations.ExpectTableColumnsToMatchOrderedList(
+    column_names_list_exp = gx.expectations.ExpectTableColumnsToMatchOrderedList(
         column_list=["Reviews", "Labels"]
     )
-    distinctLablesExp = gx.expectations.ExpectColumnDistinctValuesToContainSet(
+    distinct_labels_exp = gx.expectations.ExpectColumnDistinctValuesToContainSet(
         column="Labels",
         value_set=[0, 1]
     )
-    notNullReviewsExp = gx.expectations.ExpectColumnValuesToNotBeNull(column="Reviews")
-    notNullLablesExp = gx.expectations.ExpectColumnValuesToNotBeNull(column="Labels")
+    not_null_reviews_exp = gx.expectations.ExpectColumnValuesToNotBeNull(column="Reviews")
+    not_null_lables_exp = gx.expectations.ExpectColumnValuesToNotBeNull(column="Labels")
 
     # Add Expectations
-    suite.add_expectation(columnNamesListExp)
-    suite.add_expectation(distinctLablesExp)
-    suite.add_expectation(notNullReviewsExp)
-    suite.add_expectation(notNullLablesExp)
+    suite.add_expectation(column_names_list_exp)
+    suite.add_expectation(distinct_labels_exp)
+    suite.add_expectation(not_null_reviews_exp)
+    suite.add_expectation(not_null_lables_exp)
 
     # Data source
     data_source_name = "to_validate"
