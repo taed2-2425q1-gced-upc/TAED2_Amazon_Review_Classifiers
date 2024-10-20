@@ -1,6 +1,17 @@
 """
-Main script for preprocessing the Amazon review data.
+This module processes and tokenizes Amazon review data for sentiment classification. It reads the 
+raw text data, tokenizes the reviews, splits the data into training and validation sets, and saves 
+the processed sequences and labels for model training. The module also checks TensorFlow version 
+compatibility and handles memory management with garbage collection.
+
+The module supports the following functionalities:
+- Checking and installing the required TensorFlow version.
+- Reading and processing labeled Amazon review data.
+- Tokenizing reviews and saving the tokenizer for future use.
+- Splitting data into training and validation sets.
+- Saving tokenized sequences and labels for training.
 """
+
 
 from pathlib import Path
 import sys
@@ -50,8 +61,16 @@ def main(
     Main function to run the Amazon review sentiment classification training.
 
     Args:
-        train_data_path (Path): Path to the training data (default: RAW_DATA_DIR / "train.txt").
+        train_data_path: Path to the training data file.
+        train_sequences_path: Path to save the tokenized training sequences.
+        val_sequences_path: Path to save the tokenized validation sequences.
+        train_labels_path: Path to save the training labels.
+        val_labels_path: Path to save the validation labels.
+
+    Returns:
+        None
     """
+
 
     check_tensorflow_version()
 

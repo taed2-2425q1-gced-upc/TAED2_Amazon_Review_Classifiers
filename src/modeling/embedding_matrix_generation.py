@@ -1,6 +1,14 @@
 """
-Main script for preprocessing the Amazon review data.
+This module handles loading GloVe embeddings and generating an embedding matrix for sentiment 
+classification models. It checks TensorFlow version compatibility, loads a pre-trained tokenizer, 
+and creates the embedding matrix using the GloVe embeddings, which is then saved for future use.
+
+The module supports the following functionalities:
+- Checking TensorFlow version and ensuring it matches the required version.
+- Loading GloVe embeddings for specific words in the tokenizer's word index.
+- Constructing and saving the embedding matrix for model training.
 """
+
 
 import pickle
 import subprocess
@@ -81,11 +89,9 @@ def main(
     Main function to run the Amazon review sentiment classification training.
 
     Args:
-        train_data_path (Path): Path to the training data (default: RAW_DATA_DIR / "train.txt").
-        model_path (Path): Path to save the trained model
-        		   (default: MODELS_DIR / "sentiment_model.h5").
-        embeddings_path (Path): Path to the pre-trained GloVe embeddings
-        			(default: EXTERNAL_DATA_DIR / "glove.6B.100d.txt").
+        train_data_path: Path to the training data.
+        model_path: Path to save the trained model.
+        embeddings_path: Path to the pre-trained GloVe embeddings.
     """
 
     check_tensorflow_version()

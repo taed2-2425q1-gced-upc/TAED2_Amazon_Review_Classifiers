@@ -1,4 +1,18 @@
-""" Predict sentiment for reviews using a trained model. """
+"""
+This module predicts sentiment for Amazon reviews using a pre-trained TensorFlow model. It loads the 
+trained model and tokenizer, reads reviews from a text file, processes the reviews, and predicts the 
+sentiment (either 'Positive' or 'Negative'). The module also logs relevant data, including the 
+predictions, into MLflow, and tracks the environmental impact using CodeCarbon.
+
+The module supports the following functionalities:
+- TensorFlow version check and installation if necessary.
+- Loading a pre-trained sentiment model and tokenizer.
+- Reading reviews from a text file and preprocessing them for sentiment prediction.
+- Predicting the sentiment for each review using the model.
+- Logging prediction results and input reviews into MLflow.
+- Tracking emissions during the prediction process.
+"""
+
 
 from pathlib import Path
 import subprocess
@@ -35,7 +49,17 @@ def check_tensorflow_version():
         sys.exit("Please restart the runtime to apply changes.")
 
 def predict_sentiment(text, model, tokenizer):
-    """ Predict sentiment for a given text. """
+    """
+    Predict sentiment for a given text using a pre-trained model.
+
+    Args:
+        text (str): The input text for which to predict sentiment.
+        model (tf.keras.Model): The pre-trained TensorFlow model used for prediction.
+        tokenizer: The tokenizer used to preprocess the input text into sequences.
+
+    Returns:
+        str: The predicted sentiment label ('Positive' or 'Negative').
+    """
 
     # Preprocess the text before predicting (tokenizing and padding)
     sequence = tokenizer.texts_to_sequences([text])  # Convert text to sequence
@@ -55,7 +79,18 @@ def main(
     # Assuming you have the tokenizer saved at the same path as before
     tokenizer_path: Path = RESOURCES_DIR / "tokenizer.pkl",
 ):
-    """ Predict sentiment for reviews using a trained model. """
+    """
+    Main function to predict sentiment for reviews using a trained model.
+
+    Args:
+        predict_data_path: Path to the file containing reviews to be predicted.
+        model_path: Path to the trained sentiment model.
+        tokenizer_path: Path to the saved tokenizer used for processing the reviews.
+
+    Returns:
+        None
+    """
+
     tracker.start()
     logger.info(f"Using model {model_path} to predict data from {predict_data_path}")
 

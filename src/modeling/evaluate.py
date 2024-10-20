@@ -113,9 +113,9 @@ def main(
     evaluation results and input artifacts to MLflow.
 
     Args:
-        evaluate_data_path (Path): Path to the test data file.
-        model_path (Path): Path to the trained model file (.h5).
-        tokenizer_path (Path): Path to the saved tokenizer file (.pkl).
+        evaluate_data_path: Path to the test data file.
+        model_path: Path to the trained model file.
+        tokenizer_path: Path to the saved tokenizer file.
         max_review_length (int): Maximum length for padding reviews (default is 250).
     """
     logger.info(f"Using model {model_path} to evaluate performance on \

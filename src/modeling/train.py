@@ -58,6 +58,34 @@ def map_and_reshape_labels(labels):
     mapped_labels = [label_mapping[label] for label in labels]
     return np.array(mapped_labels).reshape(-1, 1)
 
+def data_generator(reviews, labels, batch_size, maxlen):
+    """
+    Generate batches of padded sequences and corresponding labels for training.
+
+    Args:
+        reviews (list): List of tokenized reviews (sequences of integers) to be 
+        padded and used as input data.
+        labels (list or array-like): List or array of labels corresponding to the reviews.
+        batch_size (int): Number of samples per batch.
+        maxlen (int): Maximum length for padding the sequences.
+
+    Yields:
+        tuple: A tuple (padded_sequences, batch_labels), where padded_sequences
+        are the padded input sequences, and batch_labels are the corresponding 
+        labels for the batch.
+    """
+    total_samples = len(reviews)
+
+    while True:
+        for i in range(0, total_samples, batch_size):
+            batch_reviews = reviews[i:i+batch_size]
+            batch_labels = labels[i:i+batch_size]
+
+            padded_sequences = tf.keras.preprocessing.sequence.pad_sequences(
+            batch_reviews, padding='post', maxlen=maxlen)
+
+            yield padded_sequences, batch_labels
+
 mlflow.set_experiment("amazon-reviews-test")
 
 @app.command()
@@ -138,18 +166,6 @@ def main(
 
         # ---- TRAINING ----
         logger.info("Training the model...")
-        def data_generator(reviews, labels, batch_size, maxlen):
-            total_samples = len(reviews)
-
-            while True:
-                for i in range(0, total_samples, batch_size):
-                    batch_reviews = reviews[i:i+batch_size]
-                    batch_labels = labels[i:i+batch_size]
-
-                    padded_sequences = tf.keras.preprocessing.sequence.pad_sequences(
-                    batch_reviews, padding='post', maxlen=maxlen)
-
-                    yield padded_sequences, batch_labels
 
         train_gen = data_generator(train_sequences, train_labels,
         hyperparams["batch_size"], hyperparams["maxlen"])

@@ -1,6 +1,21 @@
 """
-This module sets up project paths and configuration by loading environment variables.
-It also configures the logger and tqdm (if available) for progress bar support.
+This module sets up project paths and configurations by loading 
+environment variables from a .env file. It also configures logging using the 
+Loguru library and integrates progress bar support with tqdm if available.
+
+The module defines the following directory paths for organizing project files:
+- PROJ_ROOT: Root directory of the project.
+- DATA_DIR: Directory for storing data.
+- RAW_DATA_DIR: Subdirectory for raw data.
+- INTERIM_DATA_DIR: Subdirectory for interim data.
+- PROCESSED_DATA_DIR: Subdirectory for processed data.
+- EXTERNAL_DATA_DIR: Subdirectory for external data.
+- MODELS_DIR: Directory for storing machine learning models.
+- RESOURCES_DIR: Directory for storing additional resources.
+- REPORTS_DIR: Directory for generating reports.
+- FIGURES_DIR: Subdirectory for storing figures related to reports.
+
+If tqdm is installed, it configures the logger to support progress bars.
 """
 
 from pathlib import Path

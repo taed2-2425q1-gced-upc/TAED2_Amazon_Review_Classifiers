@@ -71,7 +71,7 @@ def main(
     Validation results are logged and visualized via DagsHub and Great Expectations.
 
     Args:
-        input_data_path (Path): Path to the input text file containing review data without headers.
+        input_data_path: Path to the input text file containing review data without headers.
     """
 
     logger.info(f"Using Great Expectations to validate \
