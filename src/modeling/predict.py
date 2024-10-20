@@ -10,7 +10,7 @@ import sys
 import mlflow
 from codecarbon import EmissionsTracker
 
-# Setting path 
+# Setting path
 root_dir = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(root_dir))
 
@@ -32,7 +32,7 @@ def predict_sentiment(text, model, tokenizer):
     padded_sequence = pad_sequences(sequence, padding='post', maxlen=250)  # Pad sequence
     prediction = model.predict(padded_sequence)[0]
     sentiment_label = 'Negative' if prediction < 0.5 else 'Positive'
-    return sentiment_label
+    return sentiment_label, prediction
 
 @app.command()
 def main(
@@ -44,7 +44,7 @@ def main(
 ):
     tracker.start()
     logger.info(f"Using model {model_path} to predict data from {predict_data_path}")
-    
+
     # Start MLflow run
     with mlflow.start_run():
 
@@ -66,7 +66,7 @@ def main(
         for review in tqdm(reviews, desc="Predicting"):
             review = review.strip()  # Remove leading/trailing whitespace
             if review:  # Check if the review is not empty
-                sentiment = predict_sentiment(review, model, tokenizer)
+                sentiment, possibility = predict_sentiment(review, model, tokenizer)
                 logger.success(f"Review: {review}\nSentiment: {sentiment}")
 
                 # Log the input review and prediction to MLflow
@@ -75,6 +75,6 @@ def main(
                 mlflow.log_param(f"sentiment_{review_counter}", sentiment)
                 review_counter += 1
         tracker.stop()
-        
+
 if __name__ == "__main__":
     app()

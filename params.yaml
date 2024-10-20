@@ -3,9 +3,10 @@ prepare:
   test_size: 0.2
 train:
   train_dataset: "data/raw/train.txt"
-  model: "models/sentiment_model.h5"
-  embeddings: "data/external/glove.6B.100d.txt"
 evaluate:
   test_dataset: "data/raw/test.txt"
 predict:
+  model: "sentiment_model_1_ep.h5"
+  tokenizer: "tokenizer.pkl"
+  embeddings: "data/external/glove.6B.100d.txt"
 
