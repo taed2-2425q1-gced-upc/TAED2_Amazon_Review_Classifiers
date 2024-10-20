@@ -25,7 +25,6 @@ import pickle
 import subprocess
 from sklearn.model_selection import train_test_split
 import tensorflow as tf
-from tensorflow.keras.preprocessing.text import Tokenizer
 import dagshub
 
 
@@ -70,7 +69,7 @@ def main():
     train_data_path: Path = RAW_DATA_DIR / params["train_dataset"]
     tokenizer_path: Path = RESOURCES_DIR / params["tokenizer"]
 
-    # Step 1: Check if TensorFlow is already version 2.10.0
+    # Check if TensorFlow is already version 2.10.0
     check_tensorflow_version()
 
     # ---- SETTING HYPERPARAMETERS ----
@@ -113,7 +112,6 @@ def main():
 
     # ---- SPLITTING DATA ----
     logger.info("Splitting data into training and validation sets...")
-
     x_train, x_val, y_train, y_val = train_test_split(sequences, labels,
     test_size=0.2, random_state=42, shuffle=False)
 
@@ -125,21 +123,20 @@ def main():
 
     # ---- SAVING DATA ----
     logger.info("Saving training and validation data...")
-    with open(train_sequences_path, 'wb') as file:
-        pickle.dump(X_train, file)
+    with open(train_sequences_path, 'wb') as f:
+        pickle.dump(x_train, f)
     logger.info(f"Train sequences saved at: {train_sequences_path}")
 
-    with open(val_sequences_path, 'wb') as file:
-        pickle.dump(X_val, file)
+    with open(val_sequences_path, 'wb') as f:
+        pickle.dump(x_val, f)
     logger.info(f"Validation sequences saved at: {val_sequences_path}")
 
-    with open(train_labels_path, 'wb') as file:
-        pickle.dump(y_train, file)
+    with open(train_labels_path, 'wb') as f:
+        pickle.dump(y_train, f)
     logger.info(f"Train labels saved at: {train_labels_path}")
 
-    with open(val_labels_path, 'wb') as file:
-        pickle.dump(y_val, file)
-
+    with open(val_labels_path, 'wb') as f:
+        pickle.dump(y_val, f)
     logger.info(f"Validation labels saved at: {val_labels_path}")
 
 if __name__ == "__main__":

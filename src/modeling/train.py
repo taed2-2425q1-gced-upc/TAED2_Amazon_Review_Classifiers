@@ -181,10 +181,10 @@ def main():
         logger.info("Training the model...")
 
         train_gen = data_generator(train_sequences, train_labels,
-        hyperparams["batch_size"], hyperparams["maxlen"])
+        batch_size, maxlen)
 
-        model.fit(train_gen, steps_per_epoch=len(train_labels) // hyperparams["batch_size"],
-                epochs=hyperparams["num_epochs"])
+        model.fit(train_gen, steps_per_epoch=len(train_labels) // batch_size,
+                epochs=num_epochs)
 
         del train_sequences, train_labels
         gc.collect()
@@ -206,21 +206,13 @@ def main():
 
         # ---- VALIDATION ----
         logger.info("Padding validation data...")
-        padded_val_sequences = pad_sequences(val_sequences, padding='post', maxlen=maxlen)
-
-        #hyperparams.update({
-        #    "num_train_samples": len(train_labels),
-        #    "num_val_samples": len(val_labels)
-        #})
-
-        # Log all the hyperparameters in one call
-        #mlflow.log_params(hyperparams)
+        padded_val_sequences = tf.keras.preprocessing.sequence.pad_sequences(
+        val_sequences, padding='post', maxlen=maxlen)
 
         del val_sequences
         gc.collect()
 
         logger.info("Evaluating the training with the validation set...")
-
  
         loss, accuracy = model.evaluate(padded_val_sequences, val_labels)
         logger.info(f"Validation loss: {loss:.6f}, Validation accuracy: {accuracy:.6f}")

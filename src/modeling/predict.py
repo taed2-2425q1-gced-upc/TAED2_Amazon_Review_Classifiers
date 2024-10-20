@@ -1,38 +1,32 @@
 """
-This module provides functionality to predict sentiment for Amazon reviews using a
-pre-trained TensorFlow model and a tokenizer. It integrates with MLflow for tracking
-and logging predictions, and uses the EmissionsTracker to monitor carbon emissions during inference.
+This module predicts sentiment for Amazon reviews using a pre-trained TensorFlow model. It loads the 
+trained model and tokenizer, reads reviews from a text file, processes the reviews, and predicts the 
+sentiment (either 'Positive' or 'Negative'). The module also logs relevant data, including the 
+predictions, into MLflow, and tracks the environmental impact using CodeCarbon.
 
-Dependencies:
-    - tensorflow as tf
-    - numpy
-    - pathlib.Path
-    - pickle
-    - typer
-    - loguru.logger
-    - tqdm
-    - sys
-    - mlflow
-    - codecarbon.EmissionsTracker
-    - dagshub
-
-Functions:
-    - predict_sentiment: Predict sentiment for a given text.
-    - main: Command-line interface for predicting sentiment on a dataset of Amazon reviews.
+The module supports the following functionalities:
+- TensorFlow version check and installation if necessary.
+- Loading a pre-trained sentiment model and tokenizer.
+- Reading reviews from a text file and preprocessing them for sentiment prediction.
+- Predicting the sentiment for each review using the model.
+- Logging prediction results and input reviews into MLflow.
+- Tracking emissions during the prediction process.
 """
 
+
 from pathlib import Path
-import tensorflow as tf
+import subprocess
+import pickle
 import sys
-from tensorflow.keras.preprocessing.sequence import pad_sequences
-import typing
+import tensorflow as tf
 import typer
+import typing
 from loguru import logger
 from tqdm import tqdm
 import mlflow
 import dagshub
 from codecarbon import EmissionsTracker
-
+from src.config import MODELS_DIR, RAW_DATA_DIR, RESOURCES_DIR
 
 # Setting path
 root_dir = Path(__file__).resolve().parent.parent.parent
@@ -100,6 +94,9 @@ def main():
     # Start tracking carbon emissions
     tracker.start()
 
+    # Check if TensorFlow is already version 2.10.0
+    check_tensorflow_version()
+    
     logger.info("Retrieving Params file.")
     params = utilities.get_params(root_dir)
 
@@ -125,7 +122,6 @@ def main():
         # Log prediction dataset as artifact in MLflow
         mlflow.log_artifact(predict_data_path)
         mlflow.log_param("Amount of reviews", len(reviews))
-
         # Predict sentiments for each review
         logger.info(f"Predicting sentiments for {len(reviews)} reviews...")
         review_counter = 1

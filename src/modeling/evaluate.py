@@ -21,6 +21,7 @@ import typer
 from loguru import logger
 import mlflow
 import dagshub
+from src.config import MODELS_DIR, RAW_DATA_DIR, RESOURCES_DIR
 
 # Setting path
 root_dir = Path(__file__).resolve().parent.parent.parent
