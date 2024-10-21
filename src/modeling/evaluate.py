@@ -140,12 +140,12 @@ def main():
 
         # Evaluate the model's performance
         loss, accuracy = model.evaluate(padded_review_sequences, labels, batch_size=256)
-        print("Validation loss:", loss)
-        print("Validation accuracy:", accuracy)
+        print("Test loss:", loss)
+        print("Test accuracy:", accuracy)
 
         # Log performance metrics to MLflow
-        mlflow.log_metric("Validation loss", loss)
-        mlflow.log_metric("Validation accuracy", accuracy)
+        mlflow.log_metric("Test loss", loss)
+        mlflow.log_metric("Test accuracy", accuracy)
 
 
 if __name__ == "__main__":

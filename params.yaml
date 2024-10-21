@@ -25,4 +25,6 @@ hyperparameters:
   dropout: 0.5
   batch_size: 256
   num_epochs: 1
-
+  optimizer: "adam"
+  loss: "binary_crossentropy"
+  metrics: "accuracy"

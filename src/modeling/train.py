@@ -186,9 +186,6 @@ def main():
         model.fit(train_gen, steps_per_epoch=len(train_labels) // batch_size,
                 epochs=num_epochs)
 
-        del train_sequences, train_labels
-        gc.collect()
-
         # ---- LOADING VALIDATION DATA ----
         logger.info("Loading validation data...")
         with open(val_sequences_path, 'rb') as f:
