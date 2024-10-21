@@ -23,6 +23,7 @@ root_dir = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(root_dir))
 
 from src.config import EXTERNAL_DATA_DIR, RESOURCES_DIR
+from src import utilities
 
 app = typer.Typer()
 
@@ -31,7 +32,7 @@ dagshub.init(repo_owner='Benji33', repo_name='TAED2_Amazon_Review_Classifiers', 
 
 def load_glove_embeddings(path, word_index, embedding_dim, num_words=10000):
     """
-    Loads only the required GloVe embeddings for the words in the word_index, 
+    Loads only the required GloVe embeddings for the words in the word_index,
     and constructs an embedding matrix in an efficient way.
 
     Args:
@@ -56,32 +57,26 @@ def load_glove_embeddings(path, word_index, embedding_dim, num_words=10000):
                 index = word_index[word]
                 if index < num_words:  # Check if the word index is within our limit
                     embedding_matrix[index] = np.asarray(vector, dtype='float32')
-                    
+
             # Memory cleanup: forcefully delete the 'vector' after use
             del vector
     # Garbage collection after file processing
-    gc.collect()              
+    gc.collect()
     return embedding_matrix
 
 @app.command()
-def main(
-
-    # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
-    embeddings_path: Path = EXTERNAL_DATA_DIR / "glove.6B.100d.txt",
-    embedding_matrix_path: Path = EXTERNAL_DATA_DIR / "embedding_matrix.pkl",
-    tokenizer_path: Path = RESOURCES_DIR / "tokenizer.pkl"
-    # -----------------------------------------
-):
+def main():
     """
     Main function to run the Amazon review sentiment classification training.
-
-    Args:
-        train_data_path (Path): Path to the training data (default: RAW_DATA_DIR / "train.txt").
-        model_path (Path): Path to save the trained model
-        		   (default: MODELS_DIR / "sentiment_model.h5").
-        embeddings_path (Path): Path to the pre-trained GloVe embeddings
-        			(default: EXTERNAL_DATA_DIR / "glove.6B.100d.txt").
     """
+
+    logger.info("Retrieving Params file.")
+    params = utilities.get_params(root_dir)
+
+    # Construct constants
+    embeddings_path: Path = EXTERNAL_DATA_DIR / params["embeddings"]
+    embedding_matrix_path: Path = EXTERNAL_DATA_DIR / params["embedding_matrix"]
+    tokenizer_path: Path = RESOURCES_DIR / params["tokenizer"]
 
     # Step 1: Check if TensorFlow is already version 2.10.0
     if tf.__version__ == '2.10.0':
@@ -102,7 +97,7 @@ def main(
 
         # End the program here
         sys.exit("Exiting program. Please restart the runtime to apply changes.")
-    
+
     # ---- SETTING HYPERPARAMETERS ----
     num_words=10000
     embedding_dim=100
@@ -112,18 +107,18 @@ def main(
     with open(tokenizer_path, 'rb') as f:
         tokenizer = pickle.load(f)
     logger.info("Tokenizer loaded successfully.")
-    
+
     # ---- LOADING GloVe PRE-TRAINED EMBEDDINGS AND CREATING EMBEDDING MATRIX ----
     logger.info("Loading GloVe pre-trained embeddings and creating embedding matrix...")
     embedding_matrix = load_glove_embeddings(embeddings_path, tokenizer.word_index, embedding_dim, num_words=num_words)
     logger.info("Embedding matrix created successfully.")
-    
+
     # ---- SAVING EMBEDDING MATRIX ----
     logger.info("Saving embedding matrix...")
     with open(embedding_matrix_path, 'wb') as f:
         pickle.dump(embedding_matrix, f)
     logger.info(f"Embedding matrix saved at: {embedding_matrix_path}")
-    
-    
+
+
 if __name__ == "__main__":
     app()

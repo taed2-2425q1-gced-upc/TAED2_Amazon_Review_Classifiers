@@ -34,6 +34,7 @@ root_dir = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(root_dir))
 
 from src.config import MODELS_DIR, RAW_DATA_DIR, EXTERNAL_DATA_DIR
+from src import utilities
 
 app = typer.Typer()
 tracker = EmissionsTracker()
@@ -44,27 +45,23 @@ dagshub.init(repo_owner='Benji33', repo_name='TAED2_Amazon_Review_Classifiers', 
 mlflow.set_experiment("amazon-reviews-test")
 
 @app.command()
-def main(
-
-    # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
-    train_sequences_path: Path = RAW_DATA_DIR / "train_sequences.pkl",
-    train_labels_path: Path = RAW_DATA_DIR / "train_labels.pkl",
-    val_sequences_path: Path = RAW_DATA_DIR / "val_sequences.pkl",
-    val_labels_path: Path = RAW_DATA_DIR / "val_labels.pkl",
-    embedding_matrix_path: Path = EXTERNAL_DATA_DIR / "embedding_matrix.pkl",
-    # -----------------------------------------
-):
+def main():
     """
     Main function to run the Amazon review sentiment classification training.
-
-    Args:
-        train_sequences_path (Path): Path to the training sequences (default: RAW_DATA_DIR / "train_sequences.pkl").
-        train_labels_path (Path): Path to the training labels (default: RAW_DATA_DIR / "train_labels.pkl").
-        val_sequences_path (Path): Path to the validation sequences (default: RAW_DATA_DIR / "val_sequences.pkl").
-        val_labels_path (Path): Path to the validation labels (default: RAW_DATA_DIR / "val_labels.pkl").
-        embedding_matrix_path (Path): Path to the pre-trained embedding matrix (default: EXTERNAL_DATA_DIR / "embedding_matrix.pkl").
     """
+
     tracker.start()
+
+    logger.info("Retrieving Params file.")
+    params = utilities.get_params(root_dir)
+
+    # Construct constants
+    train_sequences_path: Path = RAW_DATA_DIR / params["train_sequences"]
+    train_labels_path: Path = RAW_DATA_DIR / params["train_labels"]
+    val_sequences_path: Path = RAW_DATA_DIR / params["val_sequences"]
+    val_labels_path: Path = RAW_DATA_DIR / params["val_labels"]
+    embedding_matrix_path: Path = EXTERNAL_DATA_DIR / params["embedding_matrix"]
+    model_path: Path = MODELS_DIR / params["model"]
 
     # Step 1: Check if TensorFlow is already version 2.10.0
     if tf.__version__ == '2.10.0':
@@ -87,16 +84,16 @@ def main(
         sys.exit("Exiting program. Please restart the runtime to apply changes.")
 
     with mlflow.start_run():
-        
+
         # ---- SETTING HYPERPARAMETERS ----
-        num_words=10000
-        maxlen=250
-        embedding_dim=100
-        lstm_units=128
-        dropout=0.5
-        batch_size = 256
-        num_epochs = 1
-        
+        num_words=params["hyperparameters"]["num_words"]
+        maxlen=params["hyperparameters"]["maxlen"]
+        embedding_dim=params["hyperparameters"]["embedding_dim"]
+        lstm_units=params["hyperparameters"]["lstm_units"]
+        dropout=params["hyperparameters"]["dropout"]
+        batch_size=params["hyperparameters"]["batch_size"]
+        num_epochs=params["hyperparameters"]["num_epochs"]
+
         mlflow.log_param("max_input_length", maxlen)
         mlflow.log_param("num_words", num_words)
         mlflow.log_param("embedding_dim", embedding_dim)
@@ -111,10 +108,10 @@ def main(
         with open(embedding_matrix_path, 'rb') as f:
             embedding_matrix = pickle.load(f)
         logger.info("Embedding matrix loaded successfully.")
-        
+
         # ---- BUILDING THE MODEL ----
         logger.info("Building the model...")
-        
+
         model = Sequential([
             Embedding(num_words, embedding_dim, embeddings_initializer=Constant(embedding_matrix),
                     input_length=maxlen, trainable=False),
@@ -134,36 +131,36 @@ def main(
 
         del embedding_matrix
         gc.collect()
-        
+
         # ---- DATA LOADING----
         logger.info("Loading training data...")
         with open(train_sequences_path, 'rb') as f:
             train_sequences = pickle.load(f)
         logger.info("Training sequences loaded successfully.")
-        
+
         with open(train_labels_path, 'rb') as f:
             train_labels = pickle.load(f)
         logger.info("Training labels loaded successfully.")
-        
+
         mlflow.log_param("train_size", len(train_labels))
-        
+
         # ---- LABEL MAPPING ----
         label_mapping = {'__label__1': 0, '__label__2': 1}
         train_labels = [label_mapping[label] for label in train_labels]
         train_labels = np.array(train_labels).reshape(-1, 1)
-        
+
         # ---- TRAINING ----
         logger.info("Training the model...")
         def data_generator(reviews, labels, batch_size, maxlen):
             total_samples = len(reviews)
-            
+
             while True:
                 for i in range(0, total_samples, batch_size):
                     batch_reviews = reviews[i:i+batch_size]
                     batch_labels = labels[i:i+batch_size]
-                    
+
                     padded_sequences = pad_sequences(batch_reviews, padding='post', maxlen=maxlen)
-                    
+
                     yield padded_sequences, batch_labels
 
         train_gen = data_generator(train_sequences, train_labels, batch_size, maxlen)
@@ -173,29 +170,29 @@ def main(
         del train_sequences
         del train_labels
         gc.collect()
-        
+
         # ---- LOADING VALIDATION DATA ----
         logger.info("Loading validation data...")
         with open(val_sequences_path, 'rb') as f:
             val_sequences = pickle.load(f)
         logger.info("Validation sequences loaded successfully.")
-        
+
         with open(val_labels_path, 'rb') as f:
             val_labels = pickle.load(f)
         logger.info("Validation labels loaded successfully.")
-        
+
         mlflow.log_param("validation_size", len(val_labels))
 
         val_labels = [label_mapping[label] for label in val_labels]
         val_labels = np.array(val_labels).reshape(-1, 1)
-        
+
         # ---- VALIDATION ----
         logger.info("Padding validation data...")
         padded_val_sequences = pad_sequences(val_sequences, padding='post', maxlen=maxlen)
-        
+
         del val_sequences
         gc.collect()
-        
+
         logger.info("Evaluating the training with the validation set...")
         loss, accuracy = model.evaluate(padded_val_sequences, val_labels)
         logger.info("Validation loss: {:.6f}".format(loss))
@@ -206,7 +203,7 @@ def main(
 
         # ---- SAVE THE MODEL ----
         logger.info("Saving the model...")
-        model.save(MODELS_DIR / "sentiment_model.h5")
+        model.save(model_path)
 
         tracker.stop()
 

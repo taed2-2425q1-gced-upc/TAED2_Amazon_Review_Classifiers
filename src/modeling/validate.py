@@ -22,6 +22,7 @@ root_dir = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(root_dir))
 
 from src.config import RAW_DATA_DIR
+from src import utilities
 
 # Initialize Typer app for command-line interface
 app = typer.Typer()
@@ -60,9 +61,7 @@ def split_reviews_labels(input_lines: list[str]) -> typing.Tuple[np.ndarray, np.
     return reviews, labels
 
 @app.command()
-def main(
-    input_data_path: Path = RAW_DATA_DIR / "development.txt",
-):
+def main():
     """
     Main function to validate the Amazon reviews dataset.
 
@@ -70,9 +69,13 @@ def main(
     to extract labels and review texts, and runs validations using Great Expectations.
     Validation results are logged and visualized via DagsHub and Great Expectations.
 
-    Args:
-        input_data_path (Path): Path to the input text file containing review data without headers.
     """
+
+    logger.info("Retrieving Params file.")
+    params = utilities.get_params(root_dir)
+
+    # Construct constants
+    input_data_path: Path = RAW_DATA_DIR / params["validate_file"]
 
     logger.info(f"Using Great Expectations to validate \
                 data from {input_data_path}")
@@ -97,21 +100,21 @@ def main(
     suite = context.suites.add(suite)
 
     # Create expectations
-    columnNamesListExp = gx.expectations.ExpectTableColumnsToMatchOrderedList(
+    column_names_list_exp = gx.expectations.ExpectTableColumnsToMatchOrderedList(
         column_list=["Reviews", "Labels"]
     )
-    distinctLablesExp = gx.expectations.ExpectColumnDistinctValuesToContainSet(
+    distinct_lables_exp = gx.expectations.ExpectColumnDistinctValuesToContainSet(
         column="Labels",
         value_set=[0, 1]
     )
-    notNullReviewsExp = gx.expectations.ExpectColumnValuesToNotBeNull(column="Reviews")
-    notNullLablesExp = gx.expectations.ExpectColumnValuesToNotBeNull(column="Labels")
+    not_null_reviews_exp = gx.expectations.ExpectColumnValuesToNotBeNull(column="Reviews")
+    not_null_Lables_exp = gx.expectations.ExpectColumnValuesToNotBeNull(column="Labels")
 
     # Add Expectations
-    suite.add_expectation(columnNamesListExp)
-    suite.add_expectation(distinctLablesExp)
-    suite.add_expectation(notNullReviewsExp)
-    suite.add_expectation(notNullLablesExp)
+    suite.add_expectation(column_names_list_exp)
+    suite.add_expectation(distinct_lables_exp)
+    suite.add_expectation(not_null_reviews_exp)
+    suite.add_expectation(not_null_Lables_exp)
 
     # Data source
     data_source_name = "to_validate"

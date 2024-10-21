@@ -14,8 +14,6 @@ The following routes are available:
 Modules used:
     - `tensorflow`: For loading and using the machine learning model.
     - `pydantic`: For validating incoming request data.
-    - `pickle`: For loading the tokenizer from disk.
-    - `yaml`: For loading parameters from the configuration file.
     - `fastapi`: For building the web API.
     - `sys` and `pathlib`: For managing file paths and directory navigation.
 
@@ -27,11 +25,9 @@ Note:
 
 import sys
 from pathlib import Path
-import pickle
 from fastapi import FastAPI, HTTPException
 from pydantic import ValidationError
 import tensorflow as tf
-import yaml
 
 # Setting path
 root_dir = Path(__file__).resolve().parent.parent.parent
@@ -40,21 +36,17 @@ sys.path.append(str(root_dir))
 from src.app.schemas import PredictRequest
 from src.modeling import predict
 from src.config import MODELS_DIR, RESOURCES_DIR
+from src import utilities
 
 # Create a FastAPI instance
 app = FastAPI()
 
 # Get parameter file
-params_path = root_dir/ "params.yaml"
-
-# Load the YAML file
-with open(params_path, "r") as file:
-    params = yaml.safe_load(file)
+params = utilities.get_params(root_dir)
 
 # Load the trained model and tokenizer
-model = tf.keras.models.load_model(Path(MODELS_DIR / params["predict"]["model"]))
-with open(Path(RESOURCES_DIR / params["predict"]["tokenizer"]), 'rb') as handle:
-    tokenizer = pickle.load(handle)
+model = tf.keras.models.load_model(Path(MODELS_DIR / params["model"]))
+tokenizer =  utilities.get_tokenizer(Path(RESOURCES_DIR / params["tokenizer"]))
 
 # Root route to return basic information
 @app.get("/")
@@ -101,9 +93,9 @@ def process_string(request: PredictRequest):
         return {"Review is labeled": sentiment,
                 "Possibility": possibility}
 
-    except ValidationError as e:
-        raise HTTPException(status_code=400, detail=f"Validation Error: {str(e)}")
-    except Exception as e:
+    except ValidationError as exception:
+        raise HTTPException(status_code=400, detail=f"Validation Error: {str(exception)}")
+    except Exception as exception:
         # Log the exception and return a 500 error
-        print(f"Unexpected Error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+        print(f"Unexpected Error: {str(exception)}")
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(exception)}")

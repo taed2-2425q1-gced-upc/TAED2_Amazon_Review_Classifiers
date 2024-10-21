@@ -1,12 +1,28 @@
 prepare:
   train_size: 0.8
   test_size: 0.2
-train:
-  train_dataset: "data/raw/train.txt"
-evaluate:
-  test_dataset: "data/raw/test.txt"
-predict:
-  model: "sentiment_model_1_ep.h5"
-  tokenizer: "tokenizer.pkl"
-  embeddings: "data/external/glove.6B.100d.txt"
+
+train_dataset: "train.txt"
+test_dataset: "test.txt"
+predict_dataset: "predict.txt"
+evaluation_file_name: "test.txt"
+validate_file: "development.txt"
+train_sequences: "train_sequences.pkl"
+train_labels: "train_labels.pkl"
+val_sequences: "val_sequences.pkl"
+val_labels: "val_labels.pkl"
+embedding_matrix: "embedding_matrix.pkl"
+model: "sentiment_model_1_ep.h5"
+tokenizer: "tokenizer.pkl"
+embeddings: "glove.6B.100d.txt"
+max_review_length: 250
+
+hyperparameters:
+  num_words: 10000
+  maxlen: 250
+  embedding_dim: 100
+  lstm_units: 128
+  dropout: 0.5
+  batch_size: 256
+  num_epochs: 1
 
