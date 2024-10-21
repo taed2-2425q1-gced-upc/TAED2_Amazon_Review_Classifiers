@@ -173,9 +173,6 @@ def main(
         model.fit(train_gen, steps_per_epoch=len(train_labels) // hyperparams["batch_size"],
                 epochs=hyperparams["num_epochs"])
 
-        del train_sequences, train_labels
-        gc.collect()
-
         # ---- LOADING VALIDATION DATA ----
         logger.info("Loading validation data...")
         with open(val_sequences_path, 'rb') as f:
@@ -187,6 +184,9 @@ def main(
             "num_train_samples": len(train_labels),
             "num_val_samples": len(val_labels)
         })
+
+        del train_sequences, train_labels
+        gc.collect()
 
         # Log all the hyperparameters in one call
         mlflow.log_params(hyperparams)

@@ -61,7 +61,7 @@ def split_reviews_labels(input_lines: list[str]) -> typing.Tuple[np.ndarray, np.
 
 @app.command()
 def main(
-    input_data_path: Path = RAW_DATA_DIR / "development.txt",
+    input_data_path: Path = RAW_DATA_DIR / "developement.txt",
 ):
     """
     Main function to validate the Amazon reviews dataset.
