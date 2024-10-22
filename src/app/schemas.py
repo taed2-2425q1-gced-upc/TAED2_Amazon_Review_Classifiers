@@ -3,7 +3,7 @@ Schemas module for validating input data using Pydantic.
 
 This module defines the schema for the `PredictRequest` model used in the FastAPI application.
 It ensures that the input review is a valid string and includes custom validation to check
-the maximum length of the review.
+the maximum allowed words of the review.
 
 Classes:
     - PredictRequest: A Pydantic model that validates the structure and content of the
@@ -31,7 +31,7 @@ class PredictRequest(BaseModel):
 
     Attributes:
         review (str): The review text provided by the user.
-        It must be a string of no more than 250 characters.
+        It must be a string of no more than 250 words.
     """
     review: str
 
@@ -55,7 +55,7 @@ class PredictRequest(BaseModel):
 
         params = utilities.get_params(root_dir)
 
-        if len(input) > params["max_review_length"]:
+        if input.split() > params["max_review_length"]:
             raise ValueError(f"The input review exceeds the maximum length of \
-                             {params['max_review_length']} characters.")
+                             {params['max_review_length']} words.")
         return input
