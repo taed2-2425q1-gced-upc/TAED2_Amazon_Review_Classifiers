@@ -68,7 +68,6 @@ def main():
     This function reads raw review data from the specified file, processes the data
     to extract labels and review texts, and runs validations using Great Expectations.
     Validation results are logged and visualized via DagsHub and Great Expectations.
-
     """
 
     logger.info("Retrieving Params file.")
@@ -104,6 +103,7 @@ def main():
         column_list=["Reviews", "Labels"]
     )
     distinct_lables_exp = gx.expectations.ExpectColumnDistinctValuesToContainSet(
+
         column="Labels",
         value_set=[0, 1]
     )

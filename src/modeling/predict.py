@@ -30,8 +30,9 @@ import typer
 from loguru import logger
 from tqdm import tqdm
 import mlflow
-from codecarbon import EmissionsTracker
 import dagshub
+from codecarbon import EmissionsTracker
+
 
 # Setting path
 root_dir = Path(__file__).resolve().parent.parent.parent
@@ -50,6 +51,17 @@ dagshub.init(repo_owner='Benji33', repo_name='TAED2_Amazon_Review_Classifiers', 
 # Set the experiment for MLflow
 mlflow.set_experiment("amazon-reviews-predict")
 
+def check_tensorflow_version():
+    """ Check TensorFlow version and install if not 2.10.0. """
+
+    if tf.__version__ == '2.10.0':
+        logger.info("TensorFlow version 2.10.0 already installed.")
+    else:
+        logger.info(f"Current TensorFlow ver: {tf.__version__}. Installing TensorFlow 2.10.0...")
+        subprocess.check_call(['pip', 'uninstall', '-y', 'tensorflow'])
+        subprocess.check_call(['pip', 'install', 'tensorflow==2.10.0'])
+        logger.info("Exiting execution after installing TensorFlow version 2.10.0.")
+        sys.exit("Please restart the runtime to apply changes.")
 
 def predict_sentiment(text: str, model: tf.keras.Model, tokenizer) -> typing.Tuple[str, float]:
     """
@@ -66,11 +78,14 @@ def predict_sentiment(text: str, model: tf.keras.Model, tokenizer) -> typing.Tup
     """
     # Preprocess the text before predicting (tokenizing and padding)
     sequence = tokenizer.texts_to_sequences([text])  # Convert text to sequence
-    padded_sequence = pad_sequences(sequence, padding='post', maxlen=250)  # Pad sequence
+    padded_sequence = tf.keras.preprocessing.sequence.pad_sequences(
+    sequence, padding='post', maxlen=250)
     prediction = model.predict(padded_sequence)[0]
     sentiment_label = 'Negative' if prediction < 0.5 else 'Positive'
     return sentiment_label, prediction
 
+
+mlflow.set_experiment("amazon-reviews-predict")
 
 @app.command()
 def main():
@@ -81,6 +96,7 @@ def main():
     and predicts the sentiment for each review. The predictions and input data are logged to MLflow,
     and carbon emissions during the inference process are tracked using EmissionsTracker.
     """
+    
     # Start tracking carbon emissions
     tracker.start()
 
@@ -93,6 +109,7 @@ def main():
     predict_data_path: Path = RAW_DATA_DIR / params["predict_dataset"]
 
     logger.info(f"Using model {model_path} to predict data from {predict_data_path}")
+
 
     # Start MLflow run for tracking the prediction process
     with mlflow.start_run():
