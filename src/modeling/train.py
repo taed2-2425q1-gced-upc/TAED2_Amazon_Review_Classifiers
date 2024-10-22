@@ -21,11 +21,13 @@ import typer
 from loguru import logger
 import mlflow
 from codecarbon import EmissionsTracker
-from src.config import MODELS_DIR, RAW_DATA_DIR, EXTERNAL_DATA_DIR
 
 # Setting path
 root_dir = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(root_dir))
+
+from src.config import MODELS_DIR, RAW_DATA_DIR, EXTERNAL_DATA_DIR
+from src import utilities
 
 app = typer.Typer()
 tracker = EmissionsTracker()
@@ -89,45 +91,53 @@ def data_generator(reviews, labels, batch_size, maxlen):
 mlflow.set_experiment("amazon-reviews-test")
 
 @app.command()
-def main(
-    # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
-    train_sequences_path: Path = RAW_DATA_DIR / "train_sequences.pkl",
-    train_labels_path: Path = RAW_DATA_DIR / "train_labels.pkl",
-    val_sequences_path: Path = RAW_DATA_DIR / "val_sequences.pkl",
-    val_labels_path: Path = RAW_DATA_DIR / "val_labels.pkl",
-    embedding_matrix_path: Path = EXTERNAL_DATA_DIR / "embedding_matrix.pkl",
-    # -----------------------------------------
-):
+def main():
     """
     Main function to run the Amazon review sentiment classification training.
-
-    Args:
-        train_sequences_path: Path to the training sequences.
-        train_labels_path: Path to the training labels.
-        val_sequences_path: Path to the validation sequences.
-        val_labels_path: Path to the validation labels.
-        embedding_matrix_path: Path to the pre-trained embedding matrix.
     """
+
     tracker.start()
 
+    logger.info("Retrieving Params file.")
+    params = utilities.get_params(root_dir)
+
+    # Construct constants
+    train_sequences_path: Path = RAW_DATA_DIR / params["train_sequences"]
+    train_labels_path: Path = RAW_DATA_DIR / params["train_labels"]
+    val_sequences_path: Path = RAW_DATA_DIR / params["val_sequences"]
+    val_labels_path: Path = RAW_DATA_DIR / params["val_labels"]
+    embedding_matrix_path: Path = EXTERNAL_DATA_DIR / params["embedding_matrix"]
+    model_path: Path = MODELS_DIR / params["model"]
+
+    # Step 1: Check if TensorFlow is already version 2.10.0
     check_tensorflow_version()
 
     with mlflow.start_run():
 
         # ---- SETTING HYPERPARAMETERS ----
-        hyperparams = {
-            "num_words": 10000,
-            "maxlen": 250,
-            "embedding_dim": 100,
-            "lstm_units": 128,
-            "dropout": 0.5,
-            "batch_size": 256,
-            "num_epochs": 1,
-            "optimizer": "adam",
-            "loss": "binary_crossentropy",
-            "metrics": "accuracy"
-        }
+        num_words=params["hyperparameters"]["num_words"]
+        maxlen=params["hyperparameters"]["maxlen"]
+        embedding_dim=params["hyperparameters"]["embedding_dim"]
+        lstm_units=params["hyperparameters"]["lstm_units"]
+        dropout=params["hyperparameters"]["dropout"]
+        batch_size=params["hyperparameters"]["batch_size"]
+        num_epochs=params["hyperparameters"]["num_epochs"]
+        optimizer= arams["hyperparameters"]["optimizer"]
+        loss=params["hyperparameters"][ "loss"]
+        metrics=params["hyperparameters"]["metrics"]
 
+        mlflow.log_param("max_input_length", maxlen)
+        mlflow.log_param("num_words", num_words)
+        mlflow.log_param("embedding_dim", embedding_dim)
+        mlflow.log_param("epochs", num_epochs)
+        mlflow.log_param("batch_size", batch_size)
+        mlflow.log_param("lstm_units", lstm_units)
+        mlflow.log_param("dropout", dropout)
+        mlflow.log_param("num_epochs", num_epochs)
+        mlflow.log_param("optimizer", optimizer)
+        mlflow.log_param("loss", loss)
+        mlflow.log_param("metrics", metrics)
+        
         # ---- LOADING EMBEDDING MATRIX ----
         logger.info("Loading the embedding matrix...")
         with open(embedding_matrix_path, 'rb') as f:
@@ -136,20 +146,20 @@ def main(
         # ---- BUILDING THE MODEL ----
         logger.info("Building the model...")
         model = tf.keras.models.Sequential([
-            tf.keras.layers.Embedding(hyperparams["num_words"], hyperparams["embedding_dim"],
+            tf.keras.layers.Embedding(num_words, embedding_dim,
                     embeddings_initializer=tf.keras.initializers.Constant(embedding_matrix),
-                    input_length=hyperparams["maxlen"], trainable=False),
-            tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(hyperparams["lstm_units"],
+                    input_length=maxlen, trainable=False),
+            tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(lstm_units,
             return_sequences=True)),
-            tf.keras.layers.Dropout(hyperparams["dropout"]),
-            tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(hyperparams["lstm_units"])),
-            tf.keras.layers.Dropout(hyperparams["dropout"]),
+            tf.keras.layers.Dropout(dropout),
+            tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(lstm_units)),
+            tf.keras.layers.Dropout(dropout),
             tf.keras.layers.Dense(1, activation='sigmoid')
         ])
 
         # Compile the model
         logger.info("Compiling the model...")
-        model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+        model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 
         del embedding_matrix
         gc.collect()
@@ -158,12 +168,15 @@ def main(
         logger.info("Loading training data...")
         with open(train_sequences_path, 'rb') as f:
             train_sequences = pickle.load(f)
+
         with open(train_labels_path, 'rb') as f:
             train_labels = pickle.load(f)
-
-        # ---- LABEL MAPPING ----
+        logger.info("Training labels loaded successfully.")
+        
+        # ---- LABEL MAPPING ---
         train_labels = map_and_reshape_labels(train_labels)
-
+        mlflow.log_param("train_size", len(train_labels))
+        
         # ---- TRAINING ----
         logger.info("Training the model...")
 
@@ -180,27 +193,39 @@ def main(
         logger.info("Loading validation data...")
         with open(val_sequences_path, 'rb') as f:
             val_sequences = pickle.load(f)
+
+        logger.info("Validation sequences loaded successfully.")
+
         with open(val_labels_path, 'rb') as f:
             val_labels = pickle.load(f)
+        logger.info("Validation labels loaded successfully.")
 
-        hyperparams.update({
-            "num_train_samples": len(train_labels),
-            "num_val_samples": len(val_labels)
-        })
-
-        # Log all the hyperparameters in one call
-        mlflow.log_params(hyperparams)
+        mlflow.log_param("validation_size", len(val_labels))
 
         val_labels = map_and_reshape_labels(val_labels)
 
         # ---- VALIDATION ----
         logger.info("Padding validation data...")
-        padded_val_sequences = tf.keras.preprocessing.sequence.pad_sequences(
-        val_sequences, padding='post', maxlen=hyperparams["maxlen"])
+        padded_val_sequences = pad_sequences(val_sequences, padding='post', maxlen=maxlen)
+
+        #hyperparams.update({
+        #    "num_train_samples": len(train_labels),
+        #    "num_val_samples": len(val_labels)
+        #})
+
+        # Log all the hyperparameters in one call
+        #mlflow.log_params(hyperparams)
+
+        
+
+
 
         del val_sequences
         gc.collect()
 
+        logger.info("Evaluating the training with the validation set...")
+
+ 
         loss, accuracy = model.evaluate(padded_val_sequences, val_labels)
         logger.info(f"Validation loss: {loss:.6f}, Validation accuracy: {accuracy:.6f}")
 
@@ -212,7 +237,7 @@ def main(
 
         # ---- SAVE THE MODEL ----
         logger.info("Saving the model...")
-        model.save(MODELS_DIR / "sentiment_model_1_ep_256_bs.h5")
+        model.save(model_path)
 
         tracker.stop()
 

@@ -20,11 +20,14 @@ import dagshub
 import typer
 from loguru import logger
 import numpy as np
-from src.config import EXTERNAL_DATA_DIR, RESOURCES_DIR
 
 # setting path
 root_dir = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(root_dir))
+
+
+from src.config import EXTERNAL_DATA_DIR, RESOURCES_DIR
+from src import utilities
 
 app = typer.Typer()
 
@@ -44,7 +47,7 @@ def check_tensorflow_version():
 
 def load_glove_embeddings(path, word_index, embedding_dim, num_words=10000):
     """
-    Loads only the required GloVe embeddings for the words in the word_index, 
+    Loads only the required GloVe embeddings for the words in the word_index,
     and constructs an embedding matrix in an efficient way.
 
     Args:
@@ -77,22 +80,18 @@ def load_glove_embeddings(path, word_index, embedding_dim, num_words=10000):
     return embedding_matrix
 
 @app.command()
-def main(
-
-    # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
-    embeddings_path: Path = EXTERNAL_DATA_DIR / "glove.6B.100d.txt",
-    embedding_matrix_path: Path = EXTERNAL_DATA_DIR / "embedding_matrix.pkl",
-    tokenizer_path: Path = RESOURCES_DIR / "tokenizer.pkl"
-    # -----------------------------------------
-):
+def main():
     """
     Main function to run the Amazon review sentiment classification training.
-
-    Args:
-        train_data_path: Path to the training data.
-        model_path: Path to save the trained model.
-        embeddings_path: Path to the pre-trained GloVe embeddings.
     """
+
+    logger.info("Retrieving Params file.")
+    params = utilities.get_params(root_dir)
+
+    # Construct constants
+    embeddings_path: Path = EXTERNAL_DATA_DIR / params["embeddings"]
+    embedding_matrix_path: Path = EXTERNAL_DATA_DIR / params["embedding_matrix"]
+    tokenizer_path: Path = RESOURCES_DIR / params["tokenizer"]
 
     check_tensorflow_version()
 

@@ -22,6 +22,7 @@ root_dir = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(root_dir))
 
 from src.config import RAW_DATA_DIR
+from src import utilities
 
 # Initialize Typer app for command-line interface
 app = typer.Typer()
@@ -60,19 +61,20 @@ def split_reviews_labels(input_lines: list[str]) -> typing.Tuple[np.ndarray, np.
     return reviews, labels
 
 @app.command()
-def main(
-    input_data_path: Path = RAW_DATA_DIR / "development.txt",
-):
+def main():
     """
     Main function to validate the Amazon reviews dataset.
 
     This function reads raw review data from the specified file, processes the data
     to extract labels and review texts, and runs validations using Great Expectations.
     Validation results are logged and visualized via DagsHub and Great Expectations.
-
-    Args:
-        input_data_path: Path to the input text file containing review data without headers.
     """
+
+    logger.info("Retrieving Params file.")
+    params = utilities.get_params(root_dir)
+
+    # Construct constants
+    input_data_path: Path = RAW_DATA_DIR / params["validate_file"]
 
     logger.info(f"Using Great Expectations to validate \
                 data from {input_data_path}")
@@ -100,18 +102,19 @@ def main(
     column_names_list_exp = gx.expectations.ExpectTableColumnsToMatchOrderedList(
         column_list=["Reviews", "Labels"]
     )
-    distinct_labels_exp = gx.expectations.ExpectColumnDistinctValuesToContainSet(
+    distinct_lables_exp = gx.expectations.ExpectColumnDistinctValuesToContainSet(
+
         column="Labels",
         value_set=[0, 1]
     )
     not_null_reviews_exp = gx.expectations.ExpectColumnValuesToNotBeNull(column="Reviews")
-    not_null_lables_exp = gx.expectations.ExpectColumnValuesToNotBeNull(column="Labels")
+    not_null_Lables_exp = gx.expectations.ExpectColumnValuesToNotBeNull(column="Labels")
 
     # Add Expectations
     suite.add_expectation(column_names_list_exp)
-    suite.add_expectation(distinct_labels_exp)
+    suite.add_expectation(distinct_lables_exp)
     suite.add_expectation(not_null_reviews_exp)
-    suite.add_expectation(not_null_lables_exp)
+    suite.add_expectation(not_null_Lables_exp)
 
     # Data source
     data_source_name = "to_validate"

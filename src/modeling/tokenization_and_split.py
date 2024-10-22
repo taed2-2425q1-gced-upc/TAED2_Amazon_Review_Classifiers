@@ -18,17 +18,23 @@ import sys
 import pickle
 import subprocess
 import gc
-import dagshub
-import numpy as np
-import tensorflow as tf
 import typer
 from loguru import logger
+import numpy as np
+import pickle
+import subprocess
 from sklearn.model_selection import train_test_split
-from src.config import RAW_DATA_DIR, RESOURCES_DIR
+import tensorflow as tf
+from tensorflow.keras.preprocessing.text import Tokenizer
+import dagshub
+
 
 # setting path
 root_dir = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(root_dir))
+
+from src.config import RAW_DATA_DIR, RESOURCES_DIR
+from src import utilities
 
 app = typer.Typer()
 
@@ -48,34 +54,27 @@ def check_tensorflow_version():
 
 
 @app.command()
-def main(
-    # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
-    train_data_path: Path = RAW_DATA_DIR / "train.txt",
-    train_sequences_path: Path = RAW_DATA_DIR/ "train_sequences.pkl",
-    val_sequences_path: Path = RAW_DATA_DIR / "val_sequences.pkl",
-    train_labels_path: Path = RAW_DATA_DIR / "train_labels.pkl",
-    val_labels_path: Path = RAW_DATA_DIR / "val_labels.pkl"
-    # -----------------------------------------
-):
+def main():
     """
     Main function to run the Amazon review sentiment classification training.
-
-    Args:
-        train_data_path: Path to the training data file.
-        train_sequences_path: Path to save the tokenized training sequences.
-        val_sequences_path: Path to save the tokenized validation sequences.
-        train_labels_path: Path to save the training labels.
-        val_labels_path: Path to save the validation labels.
-
-    Returns:
-        None
     """
 
+    logger.info("Retrieving Params file.")
+    params = utilities.get_params(root_dir)
 
+    # Construct constants
+    train_sequences_path: Path = RAW_DATA_DIR / params["train_sequences"]
+    train_labels_path: Path = RAW_DATA_DIR / params["train_labels"]
+    val_sequences_path: Path = RAW_DATA_DIR / params["val_sequences"]
+    val_labels_path: Path = RAW_DATA_DIR / params["val_labels"]
+    train_data_path: Path = RAW_DATA_DIR / params["train_dataset"]
+    tokenizer_path: Path = RESOURCES_DIR / params["tokenizer"]
+
+    # Step 1: Check if TensorFlow is already version 2.10.0
     check_tensorflow_version()
 
     # ---- SETTING HYPERPARAMETERS ----
-    num_words=10000
+    num_words=params["hyperparameters"]["num_words"]
 
     # ---- DATA LOADING ----
     logger.info("Loading training data and extracting labels and reviews...")
@@ -105,9 +104,8 @@ def main(
     # ---- SAVING TOKENIZER ----
     tokenizer_path: Path = RESOURCES_DIR / "tokenizer.pkl"
     logger.info("Saving tokenizer...")
-    with open(tokenizer_path, 'wb') as f:
-        pickle.dump(tokenizer, f)
-    logger.info(f"Tokenizer saved at: {tokenizer_path}")
+    save_path = utilities.set_tokenizer(tokenizer_path, tokenizer)
+    logger.info(f"Tokenizer saved at: {save_path}")
 
     del reviews
     del tokenizer
@@ -115,6 +113,7 @@ def main(
 
     # ---- SPLITTING DATA ----
     logger.info("Splitting data into training and validation sets...")
+
     x_train, x_val, y_train, y_val = train_test_split(sequences, labels,
     test_size=0.2, random_state=42, shuffle=False)
 
@@ -126,20 +125,21 @@ def main(
 
     # ---- SAVING DATA ----
     logger.info("Saving training and validation data...")
-    with open(train_sequences_path, 'wb') as f:
-        pickle.dump(x_train, f)
+    with open(train_sequences_path, 'wb') as file:
+        pickle.dump(X_train, file)
     logger.info(f"Train sequences saved at: {train_sequences_path}")
 
-    with open(val_sequences_path, 'wb') as f:
-        pickle.dump(x_val, f)
+    with open(val_sequences_path, 'wb') as file:
+        pickle.dump(X_val, file)
     logger.info(f"Validation sequences saved at: {val_sequences_path}")
 
-    with open(train_labels_path, 'wb') as f:
-        pickle.dump(y_train, f)
+    with open(train_labels_path, 'wb') as file:
+        pickle.dump(y_train, file)
     logger.info(f"Train labels saved at: {train_labels_path}")
 
-    with open(val_labels_path, 'wb') as f:
-        pickle.dump(y_val, f)
+    with open(val_labels_path, 'wb') as file:
+        pickle.dump(y_val, file)
+
     logger.info(f"Validation labels saved at: {val_labels_path}")
 
 if __name__ == "__main__":
