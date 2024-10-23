@@ -10,7 +10,6 @@ This script handles the following tasks:
 """
 
 import pickle
-import subprocess
 from pathlib import Path
 import sys
 import gc
@@ -33,18 +32,6 @@ app = typer.Typer()
 tracker = EmissionsTracker()
 
 dagshub.init(repo_owner='Benji33', repo_name='TAED2_Amazon_Review_Classifiers', mlflow=True)
-
-def check_tensorflow_version():
-    """ Check TensorFlow version and install if not 2.10.0. """
-
-    if tf.__version__ == '2.10.0':
-        logger.info("TensorFlow version 2.10.0 already installed.")
-    else:
-        logger.info(f"Current TensorFlow ver: {tf.__version__}. Installing TensorFlow 2.10.0...")
-        subprocess.check_call(['pip', 'uninstall', '-y', 'tensorflow'])
-        subprocess.check_call(['pip', 'install', 'tensorflow==2.10.0'])
-        logger.info("Exiting execution after installing TensorFlow version 2.10.0.")
-        sys.exit("Please restart the runtime to apply changes.")
 
 def map_and_reshape_labels(labels):
     """
@@ -110,7 +97,7 @@ def main():
     model_path: Path = MODELS_DIR / params["model"]
 
     # Step 1: Check if TensorFlow is already version 2.10.0
-    check_tensorflow_version()
+    utilities.check_tensorflow_version()
 
     with mlflow.start_run():
 
@@ -126,18 +113,21 @@ def main():
         loss=params["hyperparameters"][ "loss"]
         metrics=params["hyperparameters"]["metrics"]
 
-        mlflow.log_param("max_input_length", maxlen)
-        mlflow.log_param("num_words", num_words)
-        mlflow.log_param("embedding_dim", embedding_dim)
-        mlflow.log_param("epochs", num_epochs)
-        mlflow.log_param("batch_size", batch_size)
-        mlflow.log_param("lstm_units", lstm_units)
-        mlflow.log_param("dropout", dropout)
-        mlflow.log_param("num_epochs", num_epochs)
-        mlflow.log_param("optimizer", optimizer)
-        mlflow.log_param("loss", loss)
-        mlflow.log_param("metrics", metrics)
-        
+        mlflow.log_params({
+            "max_input_length": maxlen,
+            "num_words": num_words,
+            "embedding_dim": embedding_dim,
+            "epochs": num_epochs,
+            "batch_size": batch_size,
+            "lstm_units": lstm_units,
+            "dropout": dropout,
+            "num_epochs": num_epochs,
+            "optimizer": optimizer,
+            "loss": loss,
+            "metrics": metrics
+        })
+
+
         # ---- LOADING EMBEDDING MATRIX ----
         logger.info("Loading the embedding matrix...")
         with open(embedding_matrix_path, 'rb') as f:
@@ -172,11 +162,11 @@ def main():
         with open(train_labels_path, 'rb') as f:
             train_labels = pickle.load(f)
         logger.info("Training labels loaded successfully.")
-        
+
         # ---- LABEL MAPPING ---
         train_labels = map_and_reshape_labels(train_labels)
         mlflow.log_param("train_size", len(train_labels))
-        
+
         # ---- TRAINING ----
         logger.info("Training the model...")
 
@@ -210,7 +200,7 @@ def main():
         gc.collect()
 
         logger.info("Evaluating the training with the validation set...")
- 
+
         loss, accuracy = model.evaluate(padded_val_sequences, val_labels)
         logger.info(f"Validation loss: {loss:.6f}, Validation accuracy: {accuracy:.6f}")
 

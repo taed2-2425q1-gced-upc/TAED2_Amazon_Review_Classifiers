@@ -16,19 +16,15 @@ The module supports the following functionalities:
 from pathlib import Path
 import sys
 import pickle
-import subprocess
 import gc
 import typer
 from loguru import logger
 import numpy as np
-import pickle
-import subprocess
 from sklearn.model_selection import train_test_split
 import tensorflow as tf
 import dagshub
 
-
-# setting path
+# Setting path
 root_dir = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(root_dir))
 
@@ -39,19 +35,6 @@ app = typer.Typer()
 
 dagshub.init(repo_owner='Benji33', repo_name='TAED2_Amazon_Review_Classifiers', mlflow=True)
 
-def check_tensorflow_version():
-    """ Check TensorFlow version and install if not 2.10.0. """
-
-    if tf.__version__ == '2.10.0':
-        logger.info("TensorFlow version 2.10.0 already installed.")
-    else:
-        logger.info(f"Current TensorFlow ver: {tf.__version__}. Installing TensorFlow 2.10.0...")
-        subprocess.check_call(['pip', 'uninstall', '-y', 'tensorflow'])
-        subprocess.check_call(['pip', 'install', 'tensorflow==2.10.0'])
-        logger.info("Exiting execution after installing TensorFlow version 2.10.0.")
-        sys.exit("Please restart the runtime to apply changes.")
-
-
 @app.command()
 def main():
     """
@@ -60,6 +43,12 @@ def main():
 
     logger.info("Retrieving Params file.")
     params = utilities.get_params(root_dir)
+
+    print(params)
+
+    if not isinstance(params, dict):
+        raise TypeError(f"Expected params to be a dictionary but got {type(params).__name__}" +
+                        "instead.")
 
     # Construct constants
     train_sequences_path: Path = RAW_DATA_DIR / params["train_sequences"]
@@ -70,7 +59,7 @@ def main():
     tokenizer_path: Path = RESOURCES_DIR / params["tokenizer"]
 
     # Check if TensorFlow is already version 2.10.0
-    check_tensorflow_version()
+    utilities.check_tensorflow_version()
 
     # ---- SETTING HYPERPARAMETERS ----
     num_words=params["hyperparameters"]["num_words"]
