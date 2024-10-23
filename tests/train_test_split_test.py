@@ -36,6 +36,8 @@ import sys
 from pathlib import Path
 from unittest.mock import mock_open, patch
 from sklearn.model_selection import train_test_split
+from loguru import logger
+from typer.testing import CliRunner
 import pytest
 import pandas as pd
 
@@ -43,7 +45,7 @@ import pandas as pd
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 # Import the modules after the path adjustments
-from src.modeling.train_test_split import read_data, write_data
+from src.modeling.train_test_split import read_data, write_data, app
 
 root_dir = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(root_dir))
@@ -103,6 +105,26 @@ def test_write_data(tmpdir):
 
     assert written_data == expected_output
 
+def test_write_data_missing_column(tmpdir):
+    """Test write_data with missing 'Review' column to trigger the exception."""
+    # Create a DataFrame without the 'Review' column
+    df_missing_review = pd.DataFrame({
+        'Label': ['1', '0'],
+        'OtherColumn': ['No review available', 'Missing review data']
+    })
+
+    # Use pytest's tmpdir to create a temporary file
+    test_output_file = tmpdir.join("output.txt")
+
+    # Write the dataframe, which should trigger the exception handler
+    write_data(df_missing_review, str(test_output_file))
+
+    # Check the output file to ensure 'N/A' was written for missing 'Review'
+    with open(test_output_file, "r", encoding="utf-8") as f:
+        written_data = f.read()
+
+    expected_output = "1 N/A\n0 N/A\n"
+    assert written_data == expected_output
 
 def test_shuffle_data():
     """Test that the dataset is shuffled correctly."""
@@ -149,3 +171,59 @@ def test_train_test_split():
     assert expected_df.empty, "There are remaining rows in expected_df that are not in combined_df."
 
     print("All rows in combined_df are accounted for in expected_df, and no extra rows remain.")
+
+runner = CliRunner()  # Initialize the Typer test runner
+
+def test_main(tmpdir, capsys):
+    """Test the Typer CLI command for dataset processing with log verification."""
+    
+    # Set paths for the temporary dataset, train, and test output
+    dataset_file = tmpdir.join("dataset.txt")
+    train_output = tmpdir.join("train.txt")
+    test_output = tmpdir.join("test.txt")
+
+    # Write the sample data to the temporary dataset file
+    dataset_file.write(SAMPLE_DATA)
+
+    # Configure loguru to output to stdout
+    logger.remove()  # Remove the default logger
+    logger.add(sys.stdout, level="INFO")  # Add a new logger that outputs to stdout
+
+    # Execute the Typer app with the CLI parameters and capture stdout/stderr
+    result = runner.invoke(app, [
+        '--dataset-file', str(dataset_file),
+        '--train-output', str(train_output),
+        '--test-output', str(test_output),
+        '--test-size', '0.25',
+        '--random-state', '42'
+    ])
+
+    # Print the command output for debugging purposes
+    print(result.output)  # To help debug any issue causing the CLI to fail
+
+    # Ensure the command ran successfully
+    assert result.exit_code == 0, f"CLI command failed with exit code {result.exit_code} and output:\n{result.output}"
+
+    # Capture the output after calling the Typer app
+    captured = capsys.readouterr()  # Capture stdout and stderr output
+    print(captured.out)  # Optional: Print the captured output for debugging
+
+    # List of all expected log messages
+    expected_messages = [
+        "Reading data from",  # From the log in `read_data` function
+        "Data reading complete",
+        "Writing data to",
+        "Data written to",
+        "Starting dataset processing...",
+        "Shuffling dataset...",
+        "Splitting dataset into train and test sets",
+        "Saving train and test sets...",
+        "Dataset processing complete.",
+    ]
+
+    # Verify all expected log messages are in the captured output
+    for message in expected_messages:
+        assert message in captured.out, \
+            f"Expected log message not found in log output: '{message}'"
+
+

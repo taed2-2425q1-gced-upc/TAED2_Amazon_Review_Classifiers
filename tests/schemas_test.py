@@ -81,15 +81,5 @@ def test_review_length_validation_fail():
     text = "The input review exceeds the maximum length of 250 characters."
     assert text in exc_info.value.errors()[0]['msg']
 
-# def test_empty_review_validation_fail():
-#     """Test that an empty review raises a validation error."""
-#     with pytest.raises(ValidationError) as exc_info:
-#         PredictRequest(review="")  # Attempting to create with empty review
-#
-#     # Check for the specific error indicating the field is required
-#     assert exc_info.value.errors()[0]['loc'] == ('review',)
-#     assert exc_info.value.errors()[0]['msg'] == "field required"
-#     assert exc_info.value.errors()[0]['type'] == 'value_error.missing'
-
 if __name__ == "__main__":
     pytest.main()

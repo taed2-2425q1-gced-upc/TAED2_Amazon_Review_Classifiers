@@ -30,6 +30,8 @@ from pathlib import Path
 from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
+from fastapi import HTTPException
+from pydantic import ValidationError
 
 # Add the parent directory (where src is located) to sys.path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -76,14 +78,15 @@ def test_process_string_negative(mock_predict):
         "Possibility": 0.90
     }
 
-#def test_process_string_validation_error():
-#   """Test the /predict-review endpoint with an invalid review."""
-#    # Send a request with a missing 'review' field
-#    response = client.post("/predict-review", json={"wrong_field": "This should fail."})
-#    assert response.status_code == 400  # 422 is the expected status code for validation errors
-#    # Check if the error message is present in the response
-#    assert "Validation Error" in response.json()["detail"][0]["msg"]
-
+# def test_process_string_validation_error():
+#     """Test the /predict-review endpoint with an invalid review."""
+#     # Send a request with a missing 'review' field
+#     response = client.post("/predict-review", json={"wrong_field": "This should fail."})
+#     assert response.status_code == 422  # 422 is the expected status code for validation errors
+#     
+#     # Check if the error message indicates that the 'review' field is required
+#     assert response.json()["detail"][0]["msg"] == "Field required"
+#     assert response.json()["detail"][0]["loc"] == ["body", "review"]  # Location of the error
 
 def test_process_string_unexpected_error(mock_predict):
     """Test the /predict-review endpoint handling an unexpected error."""
@@ -96,3 +99,4 @@ def test_process_string_unexpected_error(mock_predict):
 
 if __name__ == "__main__":
     pytest.main()
+
