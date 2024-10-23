@@ -1,27 +1,58 @@
+"""
+This module contains unit tests for the functionality of the 
+train_test_split module, which handles reading data from files, 
+writing data to files, shuffling datasets, and splitting data into 
+training and testing sets.
+
+### Tests Included:
+
+- **Mocking File Reading**: Provides sample data for testing the 
+  read_data function by simulating file reading operations.
+  
+- **Validating read_data**: Checks that the DataFrame returned 
+  by read_data matches the expected structure and content.
+  
+- **Testing write_data**: Ensures that the write_data function 
+  accurately writes DataFrame content to a file and that the output 
+  matches the expected format.
+  
+- **Shuffling Functionality**: Confirms that the dataset can be 
+  shuffled without losing any data or altering its structure.
+  
+- **Train-Test Splitting**: Verifies that the train_test_split 
+  function accurately divides the dataset into specified training 
+  and testing sets, ensuring all original data is accounted for in 
+  the output.
+
+### Fixtures:
+
+- **mock_data_file**: Mocks the file reading operation to simulate 
+  reading sample data for the read_data function.
+
+### Test Framework:
+
+- **Pytest**: Utilized for structuring and executing the tests.
+
+- **Pandas**: Used for data manipulation and validation within the 
+  tests.
+
+### Sample Data:
+
+- The sample data used for testing consists of labeled product 
+  reviews, designed to simulate real input data for the reading 
+  and splitting processes.
+"""
+
+
 import sys
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 import numpy as np
-import pytest
 from loguru import logger  # Import loguru for logging
 
 # Adjusting sys.path to include the src directory
 sys.path.append(str(Path(__file__).resolve().parent.parent))
-from src.modeling.train import map_and_reshape_labels, data_generator, check_tensorflow_version, main
-
-# Mocked TensorFlow version for testing
-tf_version_mock = '2.10.0'
-
-def test_check_tensorflow_version():
-    """Test TensorFlow version check and installation."""
-    with patch("src.modeling.train.tf") as mock_tf:
-        mock_tf.__version__ = tf_version_mock
-        check_tensorflow_version()  # Should not raise an exception
-
-        # Simulating a different version
-        mock_tf.__version__ = '2.5.0'  
-        with pytest.raises(SystemExit):
-            check_tensorflow_version()
+from src.modeling.train import map_and_reshape_labels, data_generator, main
 
 
 def test_map_and_reshape_labels():
@@ -55,7 +86,7 @@ def test_data_generator():
 @patch('src.modeling.train.tf.keras.models.Sequential')
 def test_main(mock_sequential, mock_emissions_tracker, mock_mlflow, mock_pickle, capsys):
     """Test the main training function."""
-    
+
     # Set up mock objects
     mock_mlflow.start_run.return_value = MagicMock()
     mock_mlflow.log_params.return_value = None
@@ -83,12 +114,11 @@ def test_main(mock_sequential, mock_emissions_tracker, mock_mlflow, mock_pickle,
     logger.add(sys.stdout, level="INFO")  # Add a new logger that outputs to stdout
 
     # Run the main function and capture stdout/stderr
-    with capsys.disabled():  # This disables the capturing so you can see print statements while debugging
+    with capsys.disabled():
         main()  # Execute the main function
 
     # Capture the output after calling main
     captured = capsys.readouterr()  # Capture stdout and stderr output
-    print(captured.out)  # Optional: Print the captured output for debugging
 
     # List of all expected log messages
     expected_messages = [

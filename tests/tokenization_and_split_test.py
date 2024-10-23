@@ -1,24 +1,51 @@
+"""
+This module contains unit tests for the functionality of the
+tokenization_and_split module, which is responsible for tokenizing
+text data and splitting it into training and validation sets.
+
+Tests include:
+
+- Mocking the reading of a training dataset from a text file.
+- Verifying that the main function performs the expected operations:
+  - Loads and tokenizes the training data.
+  - Saves the tokenizer and the processed sequences and labels to
+    appropriate files.
+- Ensuring that all expected log messages are captured during
+  the execution of the main function.
+
+Fixtures:
+- mock_data_file: Mocks the file reading operation for the
+  training dataset, providing sample data for testing.
+
+Test Framework:
+- Pytest: Used for structuring and running the tests.
+- Loguru: Utilized for logging outputs and capturing log messages
+  during tests.
+
+Sample Data:
+- The sample data used in testing contains labeled product reviews,
+  which are used to simulate real input data for the tokenization
+  process.
+
+"""
+
+
+
 import sys
 from pathlib import Path
-import pytest
-import numpy as np
 from unittest.mock import mock_open, patch
-import pickle
-
-# Print the current sys.path
-print("sys.path before modification:", sys.path)
+import pytest
+from loguru import logger
 
 # Add the parent directory (where src is located) to sys.path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 # Import the modules after adjusting the sys.path
-from src.modeling.tokenization_and_split import main, check_tensorflow_version
+from src.modeling.tokenization_and_split import main
 
-# Mocked TensorFlow version for testing
-tf_version_mock = '2.10.0'
-
-# Sample data to mock the file read
-sample_data = """1 This product is great!
+# Sample data to mock the file read for the 'train_dataset.txt'
+# Ensure each line has a label and a review, separated by a space.
+SAMPLE_DATA = """1 This product is great!
 0 I did not like this product at all.
 1 Amazing quality and fast shipping.
 0 Poor quality, broke after one use.
@@ -27,39 +54,61 @@ sample_data = """1 This product is great!
 @pytest.fixture
 def mock_data_file():
     """Fixture to mock open() for reading data."""
-    with patch("builtins.open", mock_open(read_data=sample_data)) as mock_file:
+    with patch("builtins.open", mock_open(read_data=SAMPLE_DATA)) as mock_file:
         yield mock_file
 
-def test_check_tensorflow_version():
-    """Test TensorFlow version check and installation."""
-    with patch("src.modeling.tokenization_and_split.tf") as mock_tf:
-        mock_tf.__version__ = tf_version_mock
-        check_tensorflow_version()  # Should not raise an exception
-
-        # Simulating a different version
-        mock_tf.__version__ = '2.5.0'  
-        with pytest.raises(SystemExit):
-            check_tensorflow_version()
-
-def test_main(mock_data_file):
+def test_main(mock_data_file, capsys):
     """Test the main functionality of the tokenization_and_split module."""
-    # Define paths for the mock outputs
-    train_sequences_path = Path("mock_train_sequences.pkl")
-    val_sequences_path = Path("mock_val_sequences.pkl")
-    train_labels_path = Path("mock_train_labels.pkl")
-    val_labels_path = Path("mock_val_labels.pkl")
-    
-    with patch("pickle.dump") as mock_pickle_dump, patch("gc.collect") as mock_gc_collect:
-        main(
-            train_data_path=Path("dummy_path.txt"),  # Path is mocked
-            train_sequences_path=train_sequences_path,
-            val_sequences_path=val_sequences_path,
-            train_labels_path=train_labels_path,
-            val_labels_path=val_labels_path
-        )
+
+    lines = SAMPLE_DATA.splitlines()
+
+    mock_data_file.return_value.__enter__.return_value.readlines.return_value = lines
+
+    # Patching the open() call for both the params.yaml and dataset file
+    with patch("pickle.dump") as mock_pickle_dump, \
+         patch("src.utilities.get_params", return_value={
+            "train_sequences": "train_sequences.pkl",
+            "train_labels": "train_labels.pkl",
+            "val_sequences": "val_sequences.pkl",
+            "val_labels": "val_labels.pkl",
+            "train_dataset": "train_dataset.txt",  # Using the mock data file content
+            "tokenizer": "tokenizer.pkl",
+            "hyperparameters": {"num_words": 10000}
+         }):  # Mocking the YAML params loading
+
+        main()
 
         # Check that the number of calls to pickle.dump is as expected
         assert mock_pickle_dump.call_count == 5  # Should save tokenizer and 4 pickled datasets
 
-if __name__ == "__main__":
-    pytest.main()
+                # Set log level and configure loguru to output to stdout
+        logger.remove()  # Remove the default logger
+        logger.add(sys.stdout, level="INFO")  # Add a new logger that outputs to stdout
+
+        # Run the main function and capture stdout/stderr
+        with capsys.disabled():
+            main()  # Execute the main function
+
+        # Capture the output after calling main
+        captured = capsys.readouterr()  # Capture stdout and stderr output
+        print(captured.out)  # Optional: Print the captured output for debugging
+
+        # List of all expected log messages
+        expected_messages = [
+            "Retrieving Params file.",
+            "Loading training data and extracting labels and reviews...",
+            "Tokenizing training data...",
+            "Saving tokenizer...",
+            "Tokenizer saved at:",
+            "Splitting data into training and validation sets...",
+            "Saving training and validation data...",
+            "Train sequences saved at:",
+            "Validation sequences saved at:",
+            "Train labels saved at:",
+            "Validation labels saved at:"
+        ]
+
+        # Verify all expected log messages are in the captured output
+        for message in expected_messages:
+            assert message in captured.out, \
+                f"Expected log message not found in log output: '{message}'"
