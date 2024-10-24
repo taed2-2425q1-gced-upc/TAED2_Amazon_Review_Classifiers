@@ -4,6 +4,7 @@ repos:
     hooks:
       - id: pylint
         name: pylint
+        args: ["--rcfile=.pylintrc"]
         entry: pylint
         language: python
         types: [python]

@@ -10,13 +10,11 @@ the following functionalities:
 - Logging model performance and input data artifacts to MLflow
 """
 
-import pickle
 import sys
 import typing
 from pathlib import Path
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.preprocessing.sequence import pad_sequences
 import typer
 from loguru import logger
 import mlflow
@@ -27,37 +25,13 @@ root_dir = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(root_dir))
 
 from src.config import MODELS_DIR, RAW_DATA_DIR, RESOURCES_DIR
+from src import utilities
 
 # Initialize Typer app for command-line interface
 app = typer.Typer()
 
 # Initialize DagsHub integration
 dagshub.init(repo_owner='Benji33', repo_name='TAED2_Amazon_Review_Classifiers', mlflow=True)
-
-# Set the experiment for MLflow
-mlflow.set_experiment("amazon-reviews-predict")
-
-
-def predict_sentiment(text: str, model: tf.keras.Model, tokenizer):
-    """
-    Predict sentiment for a given text using a pre-trained TensorFlow model.
-
-    Args:
-        text (str): Input text for sentiment prediction.
-        model (tf.keras.Model): Loaded TensorFlow model used for prediction.
-        tokenizer: Tokenizer used to preprocess the text data.
-
-    Returns:
-        str: Predicted sentiment label ('Positive' or 'Negative').
-    """
-    # Preprocess the text by tokenizing and padding
-    sequence = tokenizer.texts_to_sequences([text])  # Convert text to sequence
-    padded_sequence = pad_sequences(sequence, padding='post', maxlen=250)  # Pad sequence
-    prediction = model.predict(padded_sequence)[0]
-
-    # Determine sentiment label based on prediction
-    sentiment_label = 'Negative' if prediction < 0.5 else 'Positive'
-    return sentiment_label
 
 def split_reviews_labels(input_lines: list[str]) -> typing.Tuple[np.ndarray, np.ndarray]:
     """
@@ -86,43 +60,43 @@ def split_reviews_labels(input_lines: list[str]) -> typing.Tuple[np.ndarray, np.
 
     return reviews, labels
 
+# Set the experiment for MLflow
+mlflow.set_experiment("amazon-reviews-predict")
+
+
 @app.command()
-def main(
-    evaluate_data_path: Path = RAW_DATA_DIR / "test.txt",
-    model_path: Path = MODELS_DIR / "sentiment_model.h5",
-    tokenizer_path: Path = RESOURCES_DIR / "tokenizer.pkl",
-    max_review_length: int = 250,
-):
+def main():
     """
     Main function to evaluate the sentiment prediction model on a test dataset.
 
     This function loads the pre-trained model and tokenizer, reads test data
     from a file, and evaluates the model's accuracy and loss. It logs the
     evaluation results and input artifacts to MLflow.
-
-    Args:
-        evaluate_data_path (Path): Path to the test data file.
-        model_path (Path): Path to the trained model file (.h5).
-        tokenizer_path (Path): Path to the saved tokenizer file (.pkl).
-        max_review_length (int): Maximum length for padding reviews (default is 250).
     """
-    logger.info(f"Using model {model_path} to evaluate performance on \
-                data from {evaluate_data_path}")
+
+    # Check TensorFlow version and install if not 2.10.0
+    utilities.check_tensorflow_version()
+
+    logger.info("Retrieving Params file.")
+    params = utilities.get_params(root_dir)
+
+    # Construct constants
+    evaluate_data_path: Path = RAW_DATA_DIR / params['evaluation_file_name']
+    model_path: Path = MODELS_DIR / params['model']
+    tokenizer_path: Path = RESOURCES_DIR / params["tokenizer"]
+    max_review_length: int = params["max_review_length"]
+
+    logger.info(f"Using model {str(model_path)} to evaluate performance on \
+                data from {str(evaluate_data_path)}")
 
     # Start MLflow run
     with mlflow.start_run():
 
-        # Load the trained model and tokenizer
-        model = tf.keras.models.load_model(model_path)
-        with open(tokenizer_path, 'rb') as handle:
-            tokenizer = pickle.load(handle)
-
-        # Read reviews from evaluation file
-        with open(evaluate_data_path, 'r', encoding='utf-8') as file:
-            evaluate_file_lines = file.readlines()  # Read all lines from the file
-
         # Log input data as artifact
-        mlflow.log_artifact(evaluate_data_path)
+        mlflow.log_artifact(str(evaluate_data_path))
+
+        # Get lines from evaluation file
+        evaluate_file_lines = utilities.get_evaluation_file_lines(evaluate_data_path)
 
         # Split reviews and labels from the input data
         reviews, labels = split_reviews_labels(evaluate_file_lines)
@@ -137,22 +111,28 @@ def main(
                               labels. Ensure that each review has a \
                               corresponding label in the input file.")
 
+        # Get the tokenizer
+        tokenizer = utilities.get_tokenizer(tokenizer_path)
+
+        # Get the model
+        model = tf.keras.models.load_model(model_path)
 
         # Tokenize and pad the reviews
         sequences = tokenizer.texts_to_sequences(reviews)
-        padded_review_sequences = pad_sequences(sequences, padding='post', maxlen=max_review_length)
+        padded_review_sequences = tf.keras.preprocessing.sequence.pad_sequences(
+        sequences, padding='post', maxlen=max_review_length)
 
         # Predict sentiments for the reviews
         logger.info(f"Predicting sentiments for {len(reviews)} reviews...")
 
         # Evaluate the model's performance
-        loss, accuracy = model.evaluate(padded_review_sequences, labels)
-        print("Validation loss:", loss)
-        print("Validation accuracy:", accuracy)
+        loss, accuracy = model.evaluate(padded_review_sequences, labels, batch_size=256)
+        print("Test loss:", loss)
+        print("Test accuracy:", accuracy)
 
         # Log performance metrics to MLflow
-        mlflow.log_metric("Validation loss", loss)
-        mlflow.log_metric("Validation accuracy", accuracy)
+        mlflow.log_metric("Test loss", loss)
+        mlflow.log_metric("Test accuracy", accuracy)
 
 
 if __name__ == "__main__":
