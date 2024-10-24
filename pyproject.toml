@@ -1,0 +1,7 @@
+[tool.coverage.run]
+omit = []
+
+[tool.pytest.ini_options]
+pythonpath = "src"
+testpaths = "tests"
+addopts = "--junitxml=out/tests-report.xml --cov=src --cov-report=html:reports/coverage"

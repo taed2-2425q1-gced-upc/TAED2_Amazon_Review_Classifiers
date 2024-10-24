@@ -56,6 +56,6 @@ class PredictRequest(BaseModel):
         params = utilities.get_params(root_dir)
 
         if len(input) > params["max_review_length"]:
-            raise ValueError(f"The input review exceeds the maximum length of \
-                             {params['max_review_length']} characters.")
+            raise ValueError(f"The input review exceeds the maximum length of " +
+                             f"{params['max_review_length']} characters.")
         return input
