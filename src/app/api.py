@@ -64,7 +64,7 @@ def root():
 # Endpoint to accept a review that should be predicated in the request body,
 # it first gets validated, then will be used for infehrence
 @app.post("/predict-review")
-def process_string(request: PredictRequest):
+def process_review(request: PredictRequest):
     """
     POST endpoint to process a review for sentiment classification.
 
@@ -91,7 +91,37 @@ def process_string(request: PredictRequest):
 
         # Return the processed result
         return {"Review is labeled": sentiment,
-                "Possibility": possibility}
+                "Confidence": f"{str(round(possibility * 100, 2))}%"}
+
+    except ValidationError as exception:
+        raise HTTPException(status_code=400, detail=f"Validation Error: {str(exception)}")
+    except Exception as exception:
+        # Log the exception and return a 500 error
+        print(f"Unexpected Error: {str(exception)}")
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(exception)}")
+
+
+@app.post("/predict-reviews")
+def process_reviews(requests: list[PredictRequest]):
+    """
+    POST endpoint to process a batch of reviews for sentiment classification.
+
+    Args:
+        requests  [PredictRequest]: A Pydantic model containing a list of review texts to be classified.
+
+    Returns:
+        list[dict]: A list of dictionaries containing the sentiment label ('Positive' or 'Negative')
+              and the possibility (confidence score of the prediction) for each review.
+
+    Raises:
+        HTTPException: If validation fails or an unexpected error occurs during processing.
+    """
+    labeled_reviews = []
+    try:
+        for request in requests:
+            labeled_reviews.append(process_review(request))
+
+        return labeled_reviews
 
     except ValidationError as exception:
         raise HTTPException(status_code=400, detail=f"Validation Error: {str(exception)}")

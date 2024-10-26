@@ -14,11 +14,9 @@ Sentiment Classification for Amazon reviews
 ├── README.md          <- The top-level README for developers using this project.
 ├── data
 │   ├── external       <- Data from third party sources.
-│   ├── interim        <- Intermediate data that has been transformed.
-│   ├── processed      <- The final, canonical data sets for modeling.
 │   └── raw            <- The original, immutable data dump.
 │
-├── docs               <- A default mkdocs project; see www.mkdocs.org for details
+├── docs               <- Holds our measured emission files as well as the GAISSA label files
 │
 ├── models             <- Trained and serialized models, model predictions, or model summaries
 │
@@ -45,26 +43,38 @@ Sentiment Classification for Amazon reviews
     │
     ├── config.py               <- Store useful variables and configuration
     │
+    ├── utilities.py            <- Holds common utility functions
+    │
     ├── modeling                
     │   ├── __init__.py 
-    │   ├── predict.py          <- Code to run model inference with trained models          
-    │   ├── evaluate.py         <- Code to evaluate the performance of model against unseen data
-    │   ├── preprocess.py       <- Code to preprocess the data
-    │   ├── split.py            <- Code to split a dataset into train and test data
-    │   └── train.py            <- Code to train models
+    │   ├── predict.py                       <- Code to run model inference with trained models          
+    │   ├── evaluate.py                      <- Code to evaluate the performance of model against unseen data
+    │   ├── check_data.py                    <- Code to preprocess the data
+    │   ├── train_test_split.py              <- Code to split a dataset into train and test data
+    │   ├── train.py                         <- Code to train models
+    │	├── tokenization_and_split.py        <- Code to split and tokenize the data
+    │	├── embedding_matrix_generation.py   <- Code to generate the embedding matrix
+    │	└── model_test.py                    <- Code to test the model
     │
-    └── plots.py                <- Code to create visualizations
+    └── app
+        ├── api.py              <- Code for FastAPI interface
+        └── schema.py           <- Code for input validation using pydantic
+    
 ```
 
 ## Energy Label
 
+### Training
+
 ![GAISSA Training Label](docs/Gaissa_training_label_sentiment.jpg)
 
---------
-
-## Energy Label 
-
 ![Alt text](docs/Gaissa_training_label_sentiment.pdf?raw=true "Training Label")
+
+### Inference (100k Reviews)
+![GAISSA Inference Label](docs/Gaissa_inference_label_sentiment.jpg)
+
+![Alt text](docs/Gaissa_inference_label_sentiment.pdf?raw=true "Inference Label")
+
 
 ## Setup Guide (Ubuntu)
 1. Clone repository
