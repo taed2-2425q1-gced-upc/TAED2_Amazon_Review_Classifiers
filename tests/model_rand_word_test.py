@@ -42,6 +42,7 @@ from src.modeling.predict import predict_sentiment
 dagshub.init(repo_owner='Benji33', repo_name='TAED2_Amazon_Review_Classifiers', mlflow=True)
 
 def check_prediction_conservation(sentiment_1, sentiment_2):
+    """ Check if the sentiment prediction is conserved. """
     pred_1 = "positive" if sentiment_1 >= 0.5 else "negative"
     pred_2 = "positive" if sentiment_2 >= 0.5 else "negative"
     return pred_1 == pred_2
@@ -49,6 +50,7 @@ def check_prediction_conservation(sentiment_1, sentiment_2):
 # Load the model and tokenizer
 @pytest.fixture(scope="module")
 def model_and_tokenizer():
+    """" Load the pre-trained model and tokenizer for testing. """
     utilities.check_tensorflow_version()
     params = utilities.get_params(root_dir)
 
@@ -57,29 +59,35 @@ def model_and_tokenizer():
 
     model = tf.keras.models.load_model(model_path)
     tokenizer = utilities.get_tokenizer(tokenizer_path)
-    
+
     return model, tokenizer
 
 # Test function for original vs. altered reviews (random word substitution)
 def test_model_robustness_original_vs_altered(model_and_tokenizer):
+    """ Test the model's robustness against random word substitutions in reviews. """
     model, tokenizer = model_and_tokenizer
 
     reviews = [
-        ("The product arrived quickly and works perfectly.", "The product arrived quickly and dances perfectly."),
-        ("Not worth the price, very disappointing quality.", "Not worth the price, very hilarious quality."),
-        ("Great value for the money, highly recommend!", "Great value for the monkey, highly recommend!"),
-        ("Easy to use and does the job well.", "Easy to hug and does the job well."),
-        ("The packaging was damaged, but the item is fine.", "The packaging was damaged, but the tiger is fine.")
+        ("The product arrived quickly and works perfectly.",
+         "The product arrived quickly and dances perfectly."),
+        ("Not worth the price, very disappointing quality.",
+         "Not worth the price, very hilarious quality."),
+        ("Great value for the money, highly recommend!",
+         "Great value for the monkey, highly recommend!"),
+        ("Easy to use and does the job well.",
+         "Easy to hug and does the job well."),
+        ("The packaging was damaged, but the item is fine.",
+         "The packaging was damaged, but the tiger is fine.")
     ]
 
     results = []
     failures = []
 
     for original_review, altered_review in reviews:
-        sentiment_orig, prob_orig = predict_sentiment(original_review, model, tokenizer)
+        _, prob_orig = predict_sentiment(original_review, model, tokenizer)
         prob_orig_value = float(prob_orig)
 
-        sentiment_alt, prob_alt = predict_sentiment(altered_review, model, tokenizer)
+        _, prob_alt = predict_sentiment(altered_review, model, tokenizer)
         prob_alt_value = float(prob_alt)
 
         # Check if the prediction is conserved
@@ -109,10 +117,11 @@ def test_model_robustness_original_vs_altered(model_and_tokenizer):
 
     # Raise an assertion error if there are any failures
     if failures:
-        raise AssertionError(f"{len(failures)} out of {len(results)} tests failed in the Random Word Substitution robustness tests:\n" +
-                             "\n".join([f"Original: {f['Original']} | Altered: {f['Altered']} | "
-                                        f"Orig Prob: {f['Original Probability']:.4f}, "
-                                        f"Altered Prob: {f['Altered Probability']:.4f}" for f in failures]))
+        raise AssertionError(
+        f"{len(failures)} out of {len(results)} tests failed in the Random Word Substitution " +
+        "robustness tests:\n" +"\n".join([f"Original: {f['Original']} | Altered: {f['Altered']} | "
+        f"Orig Prob: {f['Original Probability']:.4f}, "
+        f"Altered Prob: {f['Altered Probability']:.4f}" for f in failures]))
 
 if __name__ == "__main__":
     pytest.main()

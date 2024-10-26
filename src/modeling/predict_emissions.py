@@ -13,7 +13,6 @@ The module supports the following functionalities:
 - Tracking emissions during the prediction process.
 """
 
-
 from pathlib import Path
 import sys
 import typing
@@ -42,7 +41,8 @@ dagshub.init(repo_owner='Benji33', repo_name='TAED2_Amazon_Review_Classifiers', 
 # Set the experiment for MLflow
 mlflow.set_experiment("amazon-reviews-predict")
 
-def predict_sentiments(reviews: typing.List[str], model: tf.keras.Model, tokenizer) -> typing.List[typing.Tuple[str, float]]:
+def predict_sentiments(reviews: typing.List[str], model: tf.keras.Model, tokenizer) \
+    -> typing.List[typing.Tuple[str, float]]:
     """
     Predict sentiments for a batch of texts using a pre-trained model and tokenizer.
 
@@ -52,12 +52,14 @@ def predict_sentiments(reviews: typing.List[str], model: tf.keras.Model, tokeniz
         tokenizer: The tokenizer to convert texts into sequences for the model.
 
     Returns:
-        List[Tuple[str, float]]: List containing tuples of predicted sentiment labels ('Positive' or 'Negative')
-        and the model's prediction probabilities (floats).
+        List[Tuple[str, float]]: List containing tuples of predicted
+        sentiment labels ('Positive' or 'Negative') and the model's 
+        prediction probabilities (floats).
     """
     # Preprocess the texts before predicting (tokenizing and padding)
     sequences = tokenizer.texts_to_sequences(reviews)  # Convert texts to sequences
-    padded_sequences = tf.keras.preprocessing.sequence.pad_sequences(sequences, padding='post', maxlen=250)
+    padded_sequences = tf.keras.preprocessing.sequence.pad_sequences(sequences,
+    padding='post', maxlen=250)
 
     # Suppress TensorFlow's progress output
     predictions = model.predict(padded_sequences, verbose=0)
@@ -113,21 +115,22 @@ def main():
 
         # Use tqdm to show progress for the prediction process
         logger.info(f"Predicting sentiments for {len(reviews)} reviews...")
-        
+
         # Create a single tqdm instance for the total number of reviews
         with tqdm(total=len(reviews), desc="Predicting Sentiments") as pbar:
             for i in range(0, len(reviews), batch_size):
-                batch_reviews = [review.strip() for review in reviews[i:i + batch_size] if review.strip()]  # Create a batch
+                batch_reviews = [review.strip() for review in \
+                    reviews[i:i + batch_size] if review.strip()]  # Create a batch
                 if batch_reviews:  # Check if the batch is not empty
                     sentiments = predict_sentiments(batch_reviews, model, tokenizer)
                     # Print the reviews and their predicted sentiments to a file
-                    with open(predict_output_path, 'a') as f:
+                    with open(predict_output_path, 'a', encoding='utf-8') as f:
                         for review, (sentiment, _) in zip(batch_reviews, sentiments):
                             f.write(f"Review: {review}\nPredicted Sentiment: {sentiment}\n\n")
-                pbar.update(len(batch_reviews))  # Update the progress bar for the number of reviews processed
+                pbar.update(len(batch_reviews))  # Update the progress bar
         # Log the "predictions.txt" file as an artifact in MLflow
         mlflow.log_artifact(predict_output_path)
-        
+
         # Stop tracking emissions
         tracker.stop()
 

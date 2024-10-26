@@ -1,4 +1,18 @@
-""" Extracts review text from a labeled Amazon reviews file and writes the cleaned reviews (without labels) to a new file. """
+"""
+Extract and clean review text from labeled Amazon reviews.
+
+This script processes a labeled dataset of Amazon reviews, where each review is prefixed with a 
+label (e.g., '__label__<label>'). It extracts only the review text and saves the cleaned reviews, 
+without labels, into a new file for further processing or analysis.
+
+The script performs the following operations:
+- Configures the root directory and adds it to the system path.
+- Imports configurations and utility functions.
+- Defines a function to parse and extract review text from labeled lines in an input file.
+- Reads the file paths for the test and prediction datasets from a configuration file.
+- Executes the `extract_reviews` function to save cleaned reviews to a specified output file.
+"""
+
 from pathlib import Path
 import sys
 from typing import TextIO
@@ -39,5 +53,6 @@ test_data_path: Path = RAW_DATA_DIR / params["test_dataset"]
 predict_data_path: Path = RAW_DATA_DIR / params["predict_dataset"]
 
 # Open the input and output files and run the extraction function
-with open(test_data_path, 'r') as infile, open(predict_data_path, 'w') as outfile:
+with open(test_data_path, 'r', encoding='utf-8') as infile,\
+    open(predict_data_path, 'w', encoding='utf-8') as outfile:
     extract_reviews(infile, outfile)

@@ -176,7 +176,7 @@ runner = CliRunner()  # Initialize the Typer test runner
 
 def test_main(tmpdir, capsys):
     """Test the Typer CLI command for dataset processing with log verification."""
-    
+
     # Set paths for the temporary dataset, train, and test output
     dataset_file = tmpdir.join("dataset.txt")
     train_output = tmpdir.join("train.txt")
@@ -202,7 +202,8 @@ def test_main(tmpdir, capsys):
     print(result.output)  # To help debug any issue causing the CLI to fail
 
     # Ensure the command ran successfully
-    assert result.exit_code == 0, f"CLI command failed with exit code {result.exit_code} and output:\n{result.output}"
+    assert result.exit_code == 0,\
+    f"CLI command failed with exit code {result.exit_code} and output:\n{result.output}"
 
     # Capture the output after calling the Typer app
     captured = capsys.readouterr()  # Capture stdout and stderr output
@@ -225,5 +226,3 @@ def test_main(tmpdir, capsys):
     for message in expected_messages:
         assert message in captured.out, \
             f"Expected log message not found in log output: '{message}'"
-
-

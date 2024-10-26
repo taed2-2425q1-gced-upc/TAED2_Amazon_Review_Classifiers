@@ -31,7 +31,7 @@ from pathlib import Path
 from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
-from pydantic import BaseModel, ValidationError as PydanticValidationError
+from pydantic import BaseModel
 
 # Add the parent directory (where src is located) to sys.path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
