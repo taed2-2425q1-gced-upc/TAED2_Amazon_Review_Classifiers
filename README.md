@@ -75,6 +75,7 @@ Sentiment Classification for Amazon reviews
 
 ![Alt text](docs/Gaissa_inference_label_sentiment.pdf?raw=true "Inference Label")
 
+
 ## Setup Guide (Ubuntu)
 1. Clone repository
 ```

@@ -4,7 +4,8 @@ prepare:
 
 train_dataset: "train.txt"
 test_dataset: "test.txt"
-predict_dataset: "predict.txt"
+predict_dataset: "predict_data.txt"
+predict_output: "predict_output.txt"
 evaluation_file_name: "test.txt"
 validate_file: "development.txt"
 train_sequences: "train_sequences.pkl"
@@ -25,4 +26,6 @@ hyperparameters:
   dropout: 0.5
   batch_size: 256
   num_epochs: 1
-
+  optimizer: "adam"
+  loss: "binary_crossentropy"
+  metrics: "accuracy"

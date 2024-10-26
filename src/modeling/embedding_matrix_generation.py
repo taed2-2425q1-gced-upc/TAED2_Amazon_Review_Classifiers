@@ -11,11 +11,9 @@ The module supports the following functionalities:
 
 
 import pickle
-import subprocess
 from pathlib import Path
 import sys
 import gc
-import tensorflow as tf
 import dagshub
 import typer
 from loguru import logger
@@ -32,18 +30,6 @@ from src import utilities
 app = typer.Typer()
 
 dagshub.init(repo_owner='Benji33', repo_name='TAED2_Amazon_Review_Classifiers', mlflow=True)
-
-def check_tensorflow_version():
-    """ Check TensorFlow version and install if not 2.10.0. """
-
-    if tf.__version__ == '2.10.0':
-        logger.info("TensorFlow version 2.10.0 already installed.")
-    else:
-        logger.info(f"Current TensorFlow ver: {tf.__version__}. Installing TensorFlow 2.10.0...")
-        subprocess.check_call(['pip', 'uninstall', '-y', 'tensorflow'])
-        subprocess.check_call(['pip', 'install', 'tensorflow==2.10.0'])
-        logger.info("Exiting execution after installing TensorFlow version 2.10.0.")
-        sys.exit("Please restart the runtime to apply changes.")
 
 def load_glove_embeddings(path, word_index, embedding_dim, num_words=10000):
     """
@@ -93,7 +79,7 @@ def main():
     embedding_matrix_path: Path = EXTERNAL_DATA_DIR / params["embedding_matrix"]
     tokenizer_path: Path = RESOURCES_DIR / params["tokenizer"]
 
-    check_tensorflow_version()
+    utilities.check_tensorflow_version()
 
     # ---- SETTING HYPERPARAMETERS ----
     num_words=10000

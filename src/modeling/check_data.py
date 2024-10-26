@@ -108,13 +108,13 @@ def main():
         value_set=[0, 1]
     )
     not_null_reviews_exp = gx.expectations.ExpectColumnValuesToNotBeNull(column="Reviews")
-    not_null_Lables_exp = gx.expectations.ExpectColumnValuesToNotBeNull(column="Labels")
+    not_null_lables_exp = gx.expectations.ExpectColumnValuesToNotBeNull(column="Labels")
 
     # Add Expectations
     suite.add_expectation(column_names_list_exp)
     suite.add_expectation(distinct_lables_exp)
     suite.add_expectation(not_null_reviews_exp)
-    suite.add_expectation(not_null_Lables_exp)
+    suite.add_expectation(not_null_lables_exp)
 
     # Data source
     data_source_name = "to_validate"

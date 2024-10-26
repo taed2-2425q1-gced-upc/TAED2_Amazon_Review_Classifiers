@@ -10,10 +10,8 @@ the following functionalities:
 - Logging model performance and input data artifacts to MLflow
 """
 
-import pickle
 import sys
 import typing
-import subprocess
 from pathlib import Path
 import numpy as np
 import tensorflow as tf
@@ -34,19 +32,6 @@ app = typer.Typer()
 
 # Initialize DagsHub integration
 dagshub.init(repo_owner='Benji33', repo_name='TAED2_Amazon_Review_Classifiers', mlflow=True)
-
-def check_tensorflow_version():
-    """ Check TensorFlow version and install if not 2.10.0. """
-
-    if tf.__version__ == '2.10.0':
-        logger.info("TensorFlow version 2.10.0 already installed.")
-    else:
-        logger.info(f"Current TensorFlow ver: {tf.__version__}. Installing TensorFlow 2.10.0...")
-        subprocess.check_call(['pip', 'uninstall', '-y', 'tensorflow'])
-        subprocess.check_call(['pip', 'install', 'tensorflow==2.10.0'])
-        logger.info("Exiting execution after installing TensorFlow version 2.10.0.")
-        sys.exit("Please restart the runtime to apply changes.")
-
 
 def split_reviews_labels(input_lines: list[str]) -> typing.Tuple[np.ndarray, np.ndarray]:
     """
@@ -88,7 +73,10 @@ def main():
     from a file, and evaluates the model's accuracy and loss. It logs the
     evaluation results and input artifacts to MLflow.
     """
-    
+
+    # Check TensorFlow version and install if not 2.10.0
+    utilities.check_tensorflow_version()
+
     logger.info("Retrieving Params file.")
     params = utilities.get_params(root_dir)
 
@@ -139,12 +127,12 @@ def main():
 
         # Evaluate the model's performance
         loss, accuracy = model.evaluate(padded_review_sequences, labels, batch_size=256)
-        print("Validation loss:", loss)
-        print("Validation accuracy:", accuracy)
+        print("Test loss:", loss)
+        print("Test accuracy:", accuracy)
 
         # Log performance metrics to MLflow
-        mlflow.log_metric("Validation loss", loss)
-        mlflow.log_metric("Validation accuracy", accuracy)
+        mlflow.log_metric("Test loss", loss)
+        mlflow.log_metric("Test accuracy", accuracy)
 
 
 if __name__ == "__main__":

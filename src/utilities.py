@@ -15,11 +15,13 @@ Functions:
     - get_evaluation_file_lines: Read and return lines from a review evaluation file.
 """
 
-import yaml
 import sys
 import pickle
 from pathlib import Path
+import subprocess
 import tensorflow as tf
+import yaml
+from loguru import logger
 
 def get_params(root_dir: Path, param_file_name: str = "params.yaml") -> dict:
     """
@@ -27,7 +29,8 @@ def get_params(root_dir: Path, param_file_name: str = "params.yaml") -> dict:
 
     Args:
         root_dir (Path): The root directory where the params file is located.
-        param_file_name (str): The name of the YAML file containing parameters (default: "params.yaml").
+        param_file_name (str): The name of the YAML file 
+        containing parameters (default: "params.yaml").
 
     Returns:
         dict: A dictionary containing the parameters loaded from the YAML file.
@@ -39,7 +42,7 @@ def get_params(root_dir: Path, param_file_name: str = "params.yaml") -> dict:
     params_path = root_dir / param_file_name
 
     # Load the YAML file
-    with open(params_path, "r") as file:
+    with open(params_path, "r", encoding='utf-8') as file:
         params = yaml.safe_load(file)
 
     return params
@@ -90,3 +93,15 @@ def set_tokenizer(tokenizer_file_path: Path, tokenizer):
         pickle.dump(tokenizer, f)
 
     return tokenizer_file_path
+
+def check_tensorflow_version():
+    """ Check TensorFlow version and install if not 2.10.0. """
+
+    if tf.__version__ == '2.10.0':
+        logger.info("TensorFlow version 2.10.0 already installed.")
+    else:
+        logger.info(f"Current TensorFlow ver: {tf.__version__}. Installing TensorFlow 2.10.0...")
+        subprocess.check_call(['pip', 'uninstall', '-y', 'tensorflow'])
+        subprocess.check_call(['pip', 'install', 'tensorflow==2.10.0'])
+        logger.info("Exiting execution after installing TensorFlow version 2.10.0.")
+        sys.exit("Please restart the runtime to apply changes.")
