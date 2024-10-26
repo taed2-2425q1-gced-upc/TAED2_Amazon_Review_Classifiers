@@ -4,6 +4,5 @@ omit =
     src/__init__.py
     src/modeling/__init__.py
     src/modeling/check_data.py
-    src/modeling/model_test.py
     src/modeling/predict_emissions.py
     
