@@ -1,5 +1,25 @@
 """
-Sarcasm Detection Tests
+This module contains tests for the sentiment analysis model's capability to detect sarcasm 
+in product reviews. It utilizes pytest to verify that the model's predictions remain consistent 
+when the sentiment is sarcastically expressed.
+
+Tests include:
+- Assessing the model's response to various pairs of original and sarcastic reviews, including:
+  - Reviews that express a negative sentiment and their sarcastic counterparts.
+
+The tests check if the sentiment prediction remains consistent (conserved) when the sentiment 
+is expressed sarcastically, which is essential for evaluating the model's understanding of 
+nuanced language and context.
+
+Fixtures:
+- `model_and_tokenizer`: A pytest fixture that loads the pre-trained sentiment analysis model 
+  and the tokenizer from the specified directories, ensuring that the tests run in a controlled 
+  environment.
+
+To run the tests, execute the module directly or use pytest from the command line.
+
+Usage:
+    python -m pytest path_to_this_file.py
 """
 
 from pathlib import Path

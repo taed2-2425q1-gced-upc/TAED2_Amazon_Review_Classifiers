@@ -1,10 +1,30 @@
 """
-Negation Tests
+This module contains tests for the sentiment analysis model's robustness against negation in 
+product reviews. It utilizes pytest to verify that the model maintains consistent predictions 
+when the sentiment of reviews is negated.
+
+Tests include:
+- Assessing the model's response to various pairs of original and negated reviews, including:
+  - Reviews that express a positive sentiment and their corresponding negated counterparts.
+  - Reviews that express a negative sentiment and their corresponding negated counterparts.
+
+The tests check if the sentiment prediction remains consistent (conserved) when the sentiment 
+is reversed by negation, which is crucial for validating the model's understanding of context 
+and negation.
+
+Fixtures:
+- `model_and_tokenizer`: A pytest fixture that loads the pre-trained sentiment analysis model 
+  and the tokenizer from the specified directories, ensuring that the tests run in a controlled 
+  environment.
+
+To run the tests, execute the module directly or use pytest from the command line.
+
+Usage:
+    python -m pytest path_to_this_file.py
 """
 
 from pathlib import Path
 import sys
-import typing
 import tensorflow as tf
 import pytest
 import dagshub

@@ -1,10 +1,31 @@
 """
-Random Word Substitution Tests
+This module contains tests for the robustness of the sentiment analysis model against random 
+word substitutions in product reviews. It utilizes pytest to evaluate whether the model's 
+predictions are consistent when minor alterations are made to the text.
+
+Tests include:
+- Assessing the model's response to pairs of original and altered reviews, which maintain 
+  the overall structure but substitute key words with unrelated terms.
+  - Reviews that express a positive sentiment.
+  - Reviews that express a negative sentiment.
+
+The tests check if the sentiment prediction remains consistent (conserved) after the word 
+substitutions, which is crucial for determining the model's ability to focus on relevant 
+features of the text.
+
+Fixtures:
+- `model_and_tokenizer`: A pytest fixture that loads the pre-trained sentiment analysis model 
+  and tokenizer from the specified directories, ensuring that the tests run in a controlled 
+  environment.
+
+To run the tests, execute the module directly or use pytest from the command line.
+
+Usage:
+    python -m pytest path_to_this_file.py
 """
 
 from pathlib import Path
 import sys
-import typing
 import tensorflow as tf
 import pytest
 import dagshub
