@@ -134,6 +134,7 @@ celerybeat.pid
 # Environments
 .env
 .venv
+myenv
 env/
 venv/
 ENV/
@@ -172,5 +173,7 @@ cython_debug/
 #.idea/
 /data/raw
 /data/external
+/data/full
+
 .env.txt
 mlruns

@@ -1,4 +1,8 @@
 [core]
-    remote = origin
+    remote = myremote
 ['remote "origin"']
     url = https://dagshub.com/Benji33/TAED2_Amazon_Review_Classifiers.dvc
+['remote "myremote"']
+    url = azure://data
+    account_name = dagshubarcdatastorage
+    sas_token = "sv=2022-11-02&ss=bfqt&srt=sco&sp=rwdlacupiytfx&se=2024-12-25T04:03:28Z&st=2024-10-27T20:03:28Z&spr=https,http&sig=V9PY9lnIG7b2XgoVDI1Dav%2BxMiQWMcYac6ijDoaucjY%3D"

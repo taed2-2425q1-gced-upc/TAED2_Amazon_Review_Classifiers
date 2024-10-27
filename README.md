@@ -68,12 +68,12 @@ Sentiment Classification for Amazon reviews
 
 ![GAISSA Training Label](docs/Gaissa_training_label_sentiment.jpg)
 
-![Alt text](docs/Gaissa_training_label_sentiment.pdf?raw=true "Training Label")
+![Training Label PDF](docs/Gaissa_training_label_sentiment.pdf?raw=true "Training Label")
 
 ### Inference (100k Reviews)
 ![GAISSA Inference Label](docs/Gaissa_inference_label_sentiment.jpg)
 
-![Alt text](docs/Gaissa_inference_label_sentiment.pdf?raw=true "Inference Label")
+![Inference Label PDF](docs/Gaissa_inference_label_sentiment.pdf?raw=true "Inference Label")
 
 
 ## Setup Guide (Ubuntu)

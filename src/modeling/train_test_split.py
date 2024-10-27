@@ -1,6 +1,6 @@
 """
-This module processes an Amazon review dataset by reading, shuffling, splitting, and saving the data 
-into training and testing sets. It reads a raw text file containing labeled reviews, converts the 
+This module processes an Amazon review dataset by reading, shuffling, splitting, and saving the data
+into training and testing sets. It reads a raw text file containing labeled reviews, converts the
 data into a pandas DataFrame, splits the dataset, and saves the processed data to text files.
 
 The module supports the following functionalities:
@@ -22,14 +22,10 @@ import typer
 root_dir = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(root_dir))
 
-from src.config import DATA_DIR
+from src.config import DATA_DIR, RAW_DATA_DIR
+from src import utilities
 
 app = typer.Typer()
-
-# Dataset paths
-dataset_path = DATA_DIR / "raw/amazon_reviews_sample.txt"
-train_path = DATA_DIR / "split/train.txt"
-test_path = DATA_DIR / "split/test.txt"
 
 def read_data(path: Path) -> pd.DataFrame:
     """
@@ -86,29 +82,27 @@ def write_data(data: pd.DataFrame, output_path: Path) -> None:
     logger.info(f"Data written to {output_path}")
 
 @app.command()
-def main(
-    dataset_file: Path = dataset_path,
-    train_output: Path = train_path,
-    test_output: Path = test_path,
-    test_size: float = 0.1,
-    random_state: int = 42
-) -> None:
+def main() -> None:
     """
     Main function to process and split the Amazon review dataset.
-
-    Args:
-        dataset_file (Path): Path to the raw dataset file.
-        train_output (Path): Path to save the training set.
-        test_output (Path): Path to save the testing set.
-        test_size (float): Proportion of the data to be used as test set.
-        random_state (int): Seed for random operations (shuffling/splitting).
 
     Returns:
         None
     """
+    logger.info("Retrieving Params file.")
+    params = utilities.get_params(root_dir)
+
+    # Dataset paths
+    dataset_path = DATA_DIR / params["full_dataset"]
+    train_path = RAW_DATA_DIR / params["train_dataset"]
+    test_path = RAW_DATA_DIR / params["test_dataset"]
+
+    test_size: float = 0.1,
+    random_state: int = 42
+
     logger.info("Starting dataset processing...")
 
-    dataset = read_data(dataset_file)
+    dataset = read_data(dataset_path)
 
     logger.info("Shuffling dataset...")
     dataset = dataset.sample(frac=1, random_state=random_state).reset_index(drop=True)
@@ -117,8 +111,8 @@ def main(
     train, test = train_test_split(dataset, test_size=test_size, random_state=random_state)
 
     logger.info("Saving train and test sets...")
-    write_data(train, train_output)
-    write_data(test, test_output)
+    write_data(train, train_path)
+    write_data(test, test_path)
 
     logger.info("Dataset processing complete.")
 
