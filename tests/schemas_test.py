@@ -65,20 +65,20 @@ def test_valid_review():
 
 def test_review_length_validation_pass():
     """Test that a review of valid length passes validation."""
-    review_text = "A" * 250  # Maximum length
+    review_text = "A " * 250  # Maximum length
     request = PredictRequest(review=review_text)
     assert request.review == review_text  # Should not raise an error
 
 def test_review_length_validation_fail():
     """Test that a review exceeding the maximum length raises a validation error."""
-    review_text = "A" * 251  # Exceeds maximum length
+    review_text = "A " * 251  # Exceeds maximum length
     with pytest.raises(ValidationError) as exc_info:
         PredictRequest(review=review_text)
 
     # Check for the specific error type and structure
     assert exc_info.value.errors()[0]['loc'] == ('review',)
     assert "Value error," in exc_info.value.errors()[0]['msg']  # Check for Value error
-    text = "The input review exceeds the maximum length of 250 characters."
+    text = "Value error, The input review exceeds with 251 the maximum length of 250 words."
     assert text in exc_info.value.errors()[0]['msg']
 
 if __name__ == "__main__":
