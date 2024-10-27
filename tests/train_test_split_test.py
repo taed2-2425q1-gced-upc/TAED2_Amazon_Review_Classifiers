@@ -16,21 +16,7 @@ Tests include:
 - Verifying that the `train_test_split` function accurately splits the
   dataset into specified training and testing sets, ensuring all
   original data is accounted for in the output.
-
-Fixtures:
-- mock_data_file: Mocks the file reading operation to simulate reading
-  sample data for testing the read_data function.
-
-Test Framework:
-- Pytest: Utilized for structuring and executing the tests.
-- Pandas: Used for data manipulation and validation in the tests.
-
-Sample Data:
-- The sample data used in testing consists of labeled product reviews
-  to simulate real input data for the reading and splitting processes.
-
 """
-
 
 import sys
 from pathlib import Path
@@ -68,13 +54,11 @@ expected_df = pd.DataFrame({
     ]
 })
 
-
 @pytest.fixture
 def mock_data_file():
     """Fixture to mock open() for reading data."""
     with patch("builtins.open", mock_open(read_data=SAMPLE_DATA)) as mock_file:
         yield mock_file
-
 
 def test_read_data(mock_data_file):
     """Test the read_data function."""
@@ -83,7 +67,6 @@ def test_read_data(mock_data_file):
 
     # Check that the dataframe matches the expected dataframe
     pd.testing.assert_frame_equal(df, expected_df)
-
 
 def test_write_data(tmpdir):
     """Test the write_data function."""
@@ -137,7 +120,6 @@ def test_shuffle_data():
     assert sorted(shuffled_df['Review']) == sorted(expected_df['Review'])
     assert not shuffled_df.equals(expected_df)  # The order should be different
 
-
 def test_train_test_split():
     """Test that the data is split into train and test sets correctly."""
     global expected_df  # Declare expected_df as global to modify it
@@ -152,12 +134,6 @@ def test_train_test_split():
     # Combine the DataFrames to ensure content validity
     combined_df = pd.concat([train_df, test_df]).reset_index(drop=True)
 
-    # Print DataFrames for debugging
-    print("Combined DataFrame:")
-    print(combined_df)
-    print("\nExpected DataFrame:")
-    print(expected_df)
-
     # Check if all rows in combined_df are in expected_df
     for index, row in combined_df.iterrows():
         # Check if the row exists in expected_df
@@ -169,8 +145,6 @@ def test_train_test_split():
 
     # Check that there are no remaining rows in expected_df
     assert expected_df.empty, "There are remaining rows in expected_df that are not in combined_df."
-
-    print("All rows in combined_df are accounted for in expected_df, and no extra rows remain.")
 
 runner = CliRunner()  # Initialize the Typer test runner
 
@@ -185,44 +159,42 @@ def test_main(tmpdir, capsys):
     # Write the sample data to the temporary dataset file
     dataset_file.write(SAMPLE_DATA)
 
-    # Configure loguru to output to stdout
-    logger.remove()  # Remove the default logger
-    logger.add(sys.stdout, level="INFO")  # Add a new logger that outputs to stdout
+    # Mock `utilities.get_params` to return expected paths from the test
+    params = {
+        "full_dataset": dataset_file,
+        "train_dataset": train_output,
+        "test_dataset": test_output
+    }
+    with patch("src.utilities.get_params", return_value=params):
 
-    # Execute the Typer app with the CLI parameters and capture stdout/stderr
-    result = runner.invoke(app, [
-        '--dataset-file', str(dataset_file),
-        '--train-output', str(train_output),
-        '--test-output', str(test_output),
-        '--test-size', '0.25',
-        '--random-state', '42'
-    ])
+        # Configure loguru to output to stdout
+        logger.remove()  # Remove the default logger
+        logger.add(sys.stdout, level="INFO")  # Add a new logger that outputs to stdout
 
-    # Print the command output for debugging purposes
-    print(result.output)  # To help debug any issue causing the CLI to fail
+        # Execute the Typer app without arguments
+        result = runner.invoke(app)
 
-    # Ensure the command ran successfully
-    assert result.exit_code == 0,\
-    f"CLI command failed with exit code {result.exit_code} and output:\n{result.output}"
+        # Ensure the command ran successfully
+        assert result.exit_code == 0, \
+            f"CLI command failed with exit code {result.exit_code} and output:\n{result.output}"
 
-    # Capture the output after calling the Typer app
-    captured = capsys.readouterr()  # Capture stdout and stderr output
-    print(captured.out)  # Optional: Print the captured output for debugging
+        # Capture the output after calling the Typer app
+        captured = capsys.readouterr()  # Capture stdout and stderr output
 
-    # List of all expected log messages
-    expected_messages = [
-        "Reading data from",  # From the log in `read_data` function
-        "Data reading complete",
-        "Writing data to",
-        "Data written to",
-        "Starting dataset processing...",
-        "Shuffling dataset...",
-        "Splitting dataset into train and test sets",
-        "Saving train and test sets...",
-        "Dataset processing complete.",
-    ]
+        # List of all expected log messages
+        expected_messages = [
+            "Reading data from",  
+            "Data reading complete",
+            "Writing data to",
+            "Data written to",
+            "Starting dataset processing...",
+            "Shuffling dataset...",
+            "Splitting dataset into train and test sets",
+            "Saving train and test sets...",
+            "Dataset processing complete.",
+        ]
 
-    # Verify all expected log messages are in the captured output
-    for message in expected_messages:
-        assert message in captured.out, \
-            f"Expected log message not found in log output: '{message}'"
+        # Verify all expected log messages are in the captured output
+        for message in expected_messages:
+            assert message in captured.out, \
+                f"Expected log message not found in log output: '{message}'"

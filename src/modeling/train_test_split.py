@@ -97,7 +97,7 @@ def main() -> None:
     train_path = RAW_DATA_DIR / params["train_dataset"]
     test_path = RAW_DATA_DIR / params["test_dataset"]
 
-    test_size: float = 0.1,
+    test_size: float = 0.1
     random_state: int = 42
 
     logger.info("Starting dataset processing...")
