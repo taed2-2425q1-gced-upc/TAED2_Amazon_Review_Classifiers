@@ -1,6 +1,6 @@
 """
-This module contains tests for the various endpoints of the FastAPI application defined in 
-`src.app.api`. It utilizes pytest and the FastAPI test client to simulate requests to the API 
+This module contains tests for the various endpoints of the FastAPI application defined in
+`src.app.api`. It utilizes pytest and the FastAPI test client to simulate requests to the API
 and verify the responses.
 
 Tests include:
@@ -12,12 +12,12 @@ Tests include:
   - Handling of unexpected server errors.
 - The `/predict-reviews` endpoint to handle multiple review predictions.
 
-Mocks are employed to simulate the behavior of external dependencies, specifically the 
-`predict_sentiment` function in the `src.modeling.predict` module. This allows for isolated 
+Mocks are employed to simulate the behavior of external dependencies, specifically the
+`predict_sentiment` function in the `src.modeling.predict` module. This allows for isolated
 testing of the API without relying on the actual prediction logic.
 
 Fixtures:
-- `mock_predict`: A pytest fixture that mocks the `predict_sentiment` function, enabling 
+- `mock_predict`: A pytest fixture that mocks the `predict_sentiment` function, enabling
   controlled testing of sentiment predictions.
 
 To run the tests, execute the module directly or use pytest from the command line.
@@ -61,10 +61,10 @@ def test_root():
     }
 
 def test_process_string_positive(mock_predict):
-    """Test the /predict-review endpoint with a positive review."""
+    """Test the /predictReview endpoint with a positive review."""
     mock_predict.return_value = ("Positive", 0.95)  # Mocking the sentiment and prediction
 
-    response = client.post("/predict-review", json={"review": "I love this product!"})
+    response = client.post("/predictReview", json={"review": "I love this product!"})
     assert response.status_code == 200
     assert response.json() == {
         "Review is labeled": "Positive",
@@ -72,10 +72,10 @@ def test_process_string_positive(mock_predict):
     }
 
 def test_process_string_negative(mock_predict):
-    """Test the /predict-review endpoint with a negative review."""
+    """Test the /predictReview endpoint with a negative review."""
     mock_predict.return_value = ("Negative", 0.10)  # Mocking the sentiment and prediction
 
-    response = client.post("/predict-review", json={"review": "I hate this product!"})
+    response = client.post("/predictReview", json={"review": "I hate this product!"})
     assert response.status_code == 200
     assert response.json() == {
         "Review is labeled": "Negative",
@@ -83,22 +83,22 @@ def test_process_string_negative(mock_predict):
     }
 
 def test_process_string_unexpected_error(mock_predict):
-    """Test the /predict-review endpoint handling an unexpected error."""
+    """Test the /predictReview endpoint handling an unexpected error."""
     # Simulating an unexpected error
     mock_predict.side_effect = Exception("Unexpected error")
 
-    response = client.post("/predict-review", json={"review": "This will cause an error."})
+    response = client.post("/predictReview", json={"review": "This will cause an error."})
     assert response.status_code == 500
     assert "Internal Server Error" in response.json()["detail"]
 
 def test_process_batch_reviews(mock_predict):
-    """Test the /predict-reviews endpoint with valid reviews."""
+    """Test the /predictReviews endpoint with valid reviews."""
     mock_predict.side_effect = [
         ("Positive", 0.95),  # First review
         ("Negative", 0.10),  # Second review
     ]
 
-    response = client.post("/predict-reviews", json=[
+    response = client.post("/predictReviews", json=[
         {"review": "I love this product!"},
         {"review": "I hate this product!"}
     ])
@@ -109,11 +109,11 @@ def test_process_batch_reviews(mock_predict):
     ]
 
 def test_process_batch_reviews_unexpected_error(mock_predict):
-    """Test the /predict-reviews endpoint handling an unexpected error."""
+    """Test the /predictReviews endpoint handling an unexpected error."""
     # Simulating an unexpected error
     mock_predict.side_effect = Exception("Unexpected error")
 
-    response = client.post("/predict-reviews", json=[
+    response = client.post("/predictReviews", json=[
         {"review": "This will cause an error."}
     ])
     assert response.status_code == 500

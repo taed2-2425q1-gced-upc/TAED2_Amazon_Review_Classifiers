@@ -8,8 +8,10 @@ to process and predict the sentiment of user-submitted reviews.
 
 The following routes are available:
     - GET / : Returns a welcome message with a brief introduction to the API.
-    - POST /predict-review : Accepts a JSON payload containing a review text and returns the
+    - POST /predictReview : Accepts a JSON payload containing a review text and returns the
       predicted sentiment ('Positive' or 'Negative') along with a confidence score.
+    - POST /predictReviews : Accepts a JSON payload containing a list of review texts and returns the
+      predicted sentiments ('Positive' or 'Negative') along with the confidence scores.
 
 Modules used:
     - `tensorflow`: For loading and using the machine learning model.
@@ -63,7 +65,7 @@ def root():
 
 # Endpoint to accept a review that should be predicated in the request body,
 # it first gets validated, then will be used for infehrence
-@app.post("/predict-review")
+@app.post("/predictReview")
 def process_review(request: PredictRequest):
     """
     POST endpoint to process a review for sentiment classification.
@@ -101,7 +103,7 @@ def process_review(request: PredictRequest):
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(exception)}")
 
 
-@app.post("/predict-reviews")
+@app.post("/predictReviews")
 def process_reviews(requests: list[PredictRequest]):
     """
     POST endpoint to process a batch of reviews for sentiment classification.
