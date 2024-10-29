@@ -17,6 +17,8 @@ Sentiment Classification for Amazon reviews
 │   └── raw            <- The original, immutable data dump.
 │
 ├── docs               <- Holds our measured emission files as well as the GAISSA label files
+│   ├── emissions      <- Holds measured emission files.
+│   └── gaissa_labels  <- Holds the created Gaissa Labels.
 │
 ├── models             <- Trained and serialized models, model predictions, or model summaries
 │
@@ -66,14 +68,14 @@ Sentiment Classification for Amazon reviews
 
 ### Training
 
-![GAISSA Training Label](docs/Gaissa_training_label_sentiment.jpg)
+![GAISSA Training Label](docs/gaissa_labels/Gaissa_training_label_sentiment.jpg)
 
-![Training Label PDF](docs/Gaissa_training_label_sentiment.pdf?raw=true "Training Label")
+![Training Label PDF](docs/gaissa_labels/Gaissa_training_label_sentiment.pdf?raw=true "Training Label")
 
 ### Inference (100k Reviews)
-![GAISSA Inference Label](docs/Gaissa_inference_label_sentiment.jpg)
+![GAISSA Inference Label](docs/gaissa_labels/Gaissa_inference_label_sentiment.jpg)
 
-![Inference Label PDF](docs/Gaissa_inference_label_sentiment.pdf?raw=true "Inference Label")
+![Inference Label PDF](docs/gaissa_labels/Gaissa_inference_label_sentiment.pdf?raw=true "Inference Label")
 
 
 ## Setup Guide (Ubuntu)
