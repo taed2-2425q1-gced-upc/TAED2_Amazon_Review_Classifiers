@@ -51,7 +51,7 @@ Sentiment Classification for Amazon reviews
     │   ├── __init__.py 
     │   ├── predict.py                       <- Code to run model inference with trained models          
     │   ├── evaluate.py                      <- Code to evaluate the performance of model against unseen data
-    │   ├── check_data.py                    <- Code to preprocess the data
+    │   ├── check_data.py                    <- Code to check the data
     │   ├── train_test_split.py              <- Code to split a dataset into train and test data
     │   ├── train.py                         <- Code to train models
     │	├── tokenization_and_split.py        <- Code to split and tokenize the data
