@@ -33,6 +33,7 @@ Sentiment Classification for Amazon reviews
 │
 ├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
 │   └── figures        <- Generated graphics and figures to be used in reporting
+│   └── coverage       <- Generated pytest coverage report
 │
 ├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
 │                         generated with `pip freeze > requirements.txt`
@@ -61,7 +62,7 @@ Sentiment Classification for Amazon reviews
     └── app
         ├── api.py              <- Code for FastAPI interface
         └── schema.py           <- Code for input validation using pydantic
-    
+└── tests   <- Pyest test files to test model and code
 ```
 
 ## Energy Label
@@ -88,7 +89,7 @@ git clone <repository-url>
 sudo apt-get install python3.10
 sudo apt-get install jupyter
 ```
-3. Create virtual environment
+3. Create virtual environment (optional)
 ```
 pip install virtualenv
 cd  <project root>
@@ -99,16 +100,69 @@ source venv/bin/activate
 ```
 pip install -r requirements.txt
 ```
-5. Create custom kernel
+## Amazon Reviews Sentiment Analysis Pipeline
+
+This repository contains a pipeline for a machine learning-based sentiment analysis project on Amazon reviews. The pipeline processes labeled review text data, trains a model, evaluates its performance, and allows for predictions on new data. Each step is modular, enabling automation and retraining with new data as needed. Pipeline parameters are configurable through the `params.yaml` file.
+
+### Pipeline Steps
+
+To run each step in the pipeline, follow the instructions below. All modules can be executed using the command `python3 -m src.modeling.<filename>`, as shown in each step.
+
+#### 1. Data Splitting (`train_test_split.py`)
+
+This script splits the raw dataset into separate training and test sets, allowing for generalization of the model to unseen data.
+
+```bash
+# Run the data splitting script
+python3 -m src.modeling.train_test_split
 ```
-pip install ipykernel
-python -m ipykernel install --user --name=myenv --display-name "Python (myenv)"
+
+#### 2. Tokenization and Data Preparation (`tokenization_and_split.py`)
+This script tokenizes the training data and splits it into sequences for model training and validation.
+
+```bash
+# Run the tokenization and data preparation script
+python3 -m src.modeling.tokenization_and_split
 ```
-6. Start Jupyter
+
+#### 3. Embedding Matrix Generation (`embedding_matrix_generation.py`)
+This script creates an embedding matrix from a pre-trained word embedding model, enabling the model to leverage semantic relationships between words.
+
+```bash
+# Run the embedding matrix generation script
+python3 -m src.modeling.embedding_matrix_generation
 ```
-jupyter notebook
+
+#### 4. Model Training (`train.py`)
+This script trains the sentiment analysis model using the tokenized data, labels, and the embedding matrix.
+
+```bash
+# Run the model training script
+python3 -m src.modeling.train
 ```
-7. Select created kernel in the drop down menu top left when you have openend ```TAED2_Amazon_Review_Classifiers/notebooks/1.0-mhs-original-hugging-face-notebook.ipynb```
+
+#### 5. Model Evaluation (`evaluate.py`)
+This script evaluates the final trained model on the test dataset to assess its accuracy and generalization.
+
+```bash
+# Run the model evaluation script
+python3 -m src.modeling.evaluate
+```
+
+For prediction, use the `predict.py` or `predict_emissions.py` modules in the same way after the model is trained.
+
+#### Script for automatic execution
+
+```
+#!/bin/bash
+
+# Run each step in sequence
+python3 -m src.modeling.train_test_split
+python3 -m src.modeling.tokenization_and_split
+python3 -m src.modeling.embedding_matrix_generation
+python3 -m src.modeling.train
+python3 -m src.modeling.evaluate
+```
 
 ## API Guide
 1. After performing steps 1.-4. from the Setup Guide, set up the server. Specify the port as needed. 
