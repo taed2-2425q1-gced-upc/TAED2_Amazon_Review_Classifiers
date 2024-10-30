@@ -109,3 +109,33 @@ python -m ipykernel install --user --name=myenv --display-name "Python (myenv)"
 jupyter notebook
 ```
 7. Select created kernel in the drop down menu top left when you have openend ```TAED2_Amazon_Review_Classifiers/notebooks/1.0-mhs-original-hugging-face-notebook.ipynb```
+
+## API Guide
+1. After performing steps 1.-4. from the Setup Guide, set up the server. Specify the port as needed. 
+   ```
+   uvicorn src.app.api:app     --host 0.0.0.0     --port 5000     --reload     --reload-dir src/app     --reload-dir models
+   ```
+2. When the server is set up, you can interact with the API either by putting the ip adress of the machine or localhost + the port in your browser, depending where you set up the API.
+3. Currently two endpoints are supported: predictReview & predictReviews. As the name implies, is one for single reviews and the other for a batch of reviews.
+4. The JSON structures look like the following:
+   ```
+   # For a single review
+      {
+        "review": "This is single good review."
+      }
+    ```
+    ```
+    # For multiple reviews
+    [
+      {
+        "review": "This is a good review."
+      },
+      {
+        "review": "This is also a good review."
+      },
+      {
+        "review": "This is a bad review."
+      }
+    ]
+    ```
+5. There is a validation in place to check that no review exceeds a current maximum of 250 words (which is configurable in the params file)
