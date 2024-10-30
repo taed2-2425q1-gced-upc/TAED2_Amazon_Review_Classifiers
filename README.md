@@ -68,7 +68,7 @@ Sentiment Classification for Amazon reviews
 
 ### Training
 
-![GAISSA Training Label](docs/gaissa_labels/Gaissa_training_label_sentiment.jpg)
+![GAISSA Training Label](docs/gaissa_labels/Gaissa_training_label_sentiment.png)
 
 ![Training Label PDF](docs/gaissa_labels/Gaissa_training_label_sentiment.pdf?raw=true "Training Label")
 
