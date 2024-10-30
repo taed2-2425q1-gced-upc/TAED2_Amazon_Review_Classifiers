@@ -83,6 +83,9 @@ def test_main(mock_data_file, capsys):
          patch("src.modeling.predict.utilities.pickle.load") as mock_pickle_load, \
          patch("src.modeling.predict.mlflow.log_param") as mock_log_param, \
          patch("src.modeling.predict.mlflow.start_run") as mock_start_run, \
+         patch("src.modeling.predict.mlflow.log_artifact") as mock_log_artifact, \
+         patch("src.modeling.predict.EmissionsTracker.start") as mock_tracker_start, \
+         patch("src.modeling.predict.EmissionsTracker.stop") as mock_tracker_stop, \
          patch("src.modeling.predict.utilities.get_params") as mock_get_params:
 
         # Mock parameters returned by get_params
@@ -94,7 +97,7 @@ def test_main(mock_data_file, capsys):
 
         mock_model = MagicMock()
         # Set the model's predict method to return a mock prediction
-        mock_model.predict.return_value = [0.7]  # Mock a positive prediction (float > 0.5)
+        mock_model.predict.return_value = np.array([[0.7]])
 
         mock_load_model.return_value = mock_model
         mock_tokenizer = MagicMock()
@@ -112,18 +115,22 @@ def test_main(mock_data_file, capsys):
         captured = capsys.readouterr()  # Capture stdout and stderr output
         print(captured.out)  # Optional: Print the captured output for debugging
 
-        # List of all expected log messages
+        # Assertions to verify each key step in the main function
+        assert mock_tracker_start.called, "EmissionsTracker did not start tracking."
+        assert mock_tracker_stop.called, "EmissionsTracker did not stop tracking."
+        assert mock_log_artifact.called, "MLflow did not log the dataset artifact."
+        assert mock_start_run.called, "MLflow did not start a run."
+        assert mock_log_param.called, "MLflow did not log parameters."
+
+        # Check for expected log messages in output
         expected_messages = [
             "Retrieving Params file.",
             "Predicting sentiments for",
             "Using model"
         ]
-
-        # Verify all expected log messages are in the captured output
         for message in expected_messages:
             assert message in captured.out, \
                 f"Expected log message not found in log output: '{message}'"
-
 
 if __name__ == "__main__":
     pytest.main()
